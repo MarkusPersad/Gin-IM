@@ -51,3 +51,9 @@ Clean up binary from the last build:
 ```bash
 make clean
 ```
+
+Generate swagger docs
+
+```bash
+swag init -g ./cmd/api/main.go -o ./cmd/api/docs
+```
