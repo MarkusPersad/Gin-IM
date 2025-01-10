@@ -1,7 +1,8 @@
 package exception
 
 var (
-	ErrTimeout = NewError(1000, "请求超时")
+	ErrTimeout   = NewError(1000, "请求超时")
+	ErrCheckCode = NewError(1001, "验证码错误")
 )
 
 type PersonalError struct {
