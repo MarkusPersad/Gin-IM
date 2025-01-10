@@ -59,6 +59,8 @@ github.com/gin-contrib/logger v1.2.3 h1:aHqm4mKFBJe2icvembDdbNmPaWFDvO5zwMhejWlv
 github.com/gin-contrib/logger v1.2.3/go.mod h1:6gzH8e/IglJq0a0QRV97f02dGCfd4F3pGXJL87BQRQc=
 github.com/gin-contrib/sse v1.0.0 h1:y3bT1mUWUxDpW4JLQg/HnTqV4rozuW4tC9eFKTxYI9E=
 github.com/gin-contrib/sse v1.0.0/go.mod h1:zNuFdwarAygJBht0NTKiSi3jRf6RbqeILZ9Sp6Slhe0=
+github.com/gin-contrib/timeout v1.0.2 h1:r4RoqvDHs0rCLUCK54VSORt5c2ICKWUHNa+MFrJ3jTY=
+github.com/gin-contrib/timeout v1.0.2/go.mod h1:2nd5bn+1BdaPEKD6ksEkRJQhPCUM/keMGFSCNg3jkis=
 github.com/gin-gonic/gin v1.10.0 h1:nTuyha1TYqgedzytsKYqna+DfLos46nTv2ygFy86HFU=
 github.com/gin-gonic/gin v1.10.0/go.mod h1:4PMNQiOhvDRa013RKVbsiNwoyezlm2rm0uX/T7kzp5Y=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=

@@ -2,6 +2,7 @@ package server
 
 import (
 	_ "Gin-IM/cmd/api/docs"
+	"Gin-IM/internal/midleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -15,6 +16,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 	//Logger() 插件 Recover() 插件
 	r.Use(GinLogger(), GinRecovery(true))
 
+	//Timeout Middleware
+
+	r.Use(midleware.TimeoutMiddleware())
+
+	// Error Middleware
+	r.Use(midleware.ErrorHandler())
+
 	// CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // Add your frontend URL
@@ -22,6 +30,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true, // Enable cookies/auth
 	}))
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.GET("/", s.HelloWorldHandler)
