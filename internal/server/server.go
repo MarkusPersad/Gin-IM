@@ -1,6 +1,7 @@
 package server
 
 import (
+	"Gin-IM/internal/handler"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,14 +9,12 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-
-	"Gin-IM/internal/database"
 )
 
 type Server struct {
 	port int
 
-	db database.Service
+	*handler.Handlers
 }
 
 func NewServer() *http.Server {
@@ -23,7 +22,7 @@ func NewServer() *http.Server {
 	NewServer := &Server{
 		port: port,
 
-		db: database.New(),
+		Handlers: handler.NewHandler(),
 	}
 
 	// Declare Server config
