@@ -8,6 +8,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
+	"strings"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -23,7 +24,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(midleware.ErrorHandler())
 
 	// JWT Middleware
-	r.Use(midleware.JwtMiddleware(nil))
+	r.Use(midleware.JwtMiddleware(func(ctx *gin.Context) bool {
+		return strings.Contains(ctx.Request.URL.Path, "/api/account/login") ||
+			strings.Contains(ctx.Request.URL.Path, "/api/account/register") ||
+			strings.Contains(ctx.Request.URL.Path, "/api/account/getcaptcha") ||
+			strings.Contains(ctx.Request.URL.Path, "/hello")
+	}))
 
 	// CORS
 	r.Use(cors.New(cors.Config{
@@ -37,7 +43,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/hello", s.HelloWorldHandler)
 
-	r.GET("/health", s.healthHandler)
+	r.GET("/health", s.HealthHandler)
 
 	return r
 }
@@ -54,8 +60,4 @@ func (s *Server) HelloWorldHandler(c *gin.Context) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
 	c.JSON(http.StatusOK, resp)
-}
-
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
 }
