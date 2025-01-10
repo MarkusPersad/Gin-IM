@@ -27,6 +27,9 @@ func GernerateToken(claims jwt.Claims) (string, error) {
 
 func TokenValid(ctx *gin.Context) error {
 	tokenString := ExtractToken(ctx)
+	if tokenString == "" {
+		return exception.ErrTokenEmpty
+	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
