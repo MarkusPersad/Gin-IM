@@ -1,8 +1,11 @@
 package exception
 
 var (
-	ErrTimeout   = NewError(1000, "请求超时")
-	ErrCheckCode = NewError(1001, "验证码错误")
+	ErrTimeout      = NewError(1000, "请求超时")
+	ErrCheckCode    = NewError(1001, "验证码错误")
+	ErrInvalidToken = NewError(1002, "Token无效")
+	ErrTokenEmpty   = NewError(1003, "Token为空")
+	ErrUnknownAlg   = NewError(1004, "未知的加密算法")
 )
 
 type PersonalError struct {

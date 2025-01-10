@@ -17,11 +17,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(GinLogger(), GinRecovery(true))
 
 	//Timeout Middleware
-
 	r.Use(midleware.TimeoutMiddleware())
 
 	// Error Middleware
 	r.Use(midleware.ErrorHandler())
+
+	// JWT Middleware
+	r.Use(midleware.JwtMiddleware(nil))
 
 	// CORS
 	r.Use(cors.New(cors.Config{
