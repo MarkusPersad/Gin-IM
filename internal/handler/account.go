@@ -4,9 +4,11 @@ import (
 	"Gin-IM/pkg/exception"
 	"Gin-IM/pkg/request"
 	"Gin-IM/pkg/response"
+	"Gin-IM/pkg/token"
 	"Gin-IM/pkg/utils"
 	"Gin-IM/pkg/validates"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -94,12 +96,38 @@ func (h *Handlers) Login(ctx *gin.Context) {
 	}
 
 	// 调用数据库接口进行用户登录验证。
-	if token, err := h.db.Login(ctx, login); err != nil {
+	if tokens, err := h.db.Login(ctx, login); err != nil {
 		// 如果登录验证失败，返回错误信息并结束函数执行。
 		err = ctx.Error(err)
 		return
 	} else {
 		// 如果登录成功，返回成功响应和生成的用户令牌。
-		ctx.JSON(http.StatusOK, response.Success(0, "登录成功", token))
+		ctx.JSON(http.StatusOK, response.Success(0, "登录成功", tokens))
+	}
+}
+
+// GetUserInfo 获取用户信息
+// @Summary 获取用户信息
+// @Description 获取用户信息
+// @Tags 账户管理
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "Bearer token令牌"
+// @Success 200 {object} response.Response "返回结果"
+// @Failure 200 {object} response.Response "返回结果"
+// @Router /api/account/getuserinfo [get]
+func (h *Handlers) GetUserInfo(ctx *gin.Context) {
+	log.Logger.Info().Str("Authorization", ctx.GetHeader("Authorization"))
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		err = ctx.Error(err)
+		return
+	}
+	if user, err := h.db.GetUserInfo(claims); err != nil {
+		err = ctx.Error(err)
+		return
+	} else {
+		data := user
+		ctx.JSON(http.StatusOK, response.Success(0, "获取用户信息成功", data))
 	}
 }

@@ -2,6 +2,7 @@ package token
 
 import (
 	"Gin-IM/pkg/exception"
+	"Gin-IM/pkg/types"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
@@ -34,7 +35,7 @@ func TokenValid(ctx *gin.Context) error {
 	if tokenString == "" {
 		return exception.ErrTokenEmpty
 	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	tokens, err := jwt.ParseWithClaims(tokenString, &types.GIClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, exception.ErrUnknownAlg
 		}
@@ -43,7 +44,7 @@ func TokenValid(ctx *gin.Context) error {
 	if err != nil {
 		return err
 	}
-	if _, ok := token.Claims.(jwt.Claims); ok && token.Valid {
+	if _, ok := tokens.Claims.(*types.GIClaims); ok && tokens.Valid {
 		return nil
 	}
 	return exception.ErrInvalidToken
@@ -57,23 +58,23 @@ func ExtractToken(ctx *gin.Context) string {
 	return ""
 }
 
-func ExtractClaims(ctx *gin.Context, claims jwt.Claims) error {
+func ExtractClaims(ctx *gin.Context) (*types.GIClaims, error) {
 	tokenString := ExtractToken(ctx)
 	if tokenString == "" {
-		return exception.ErrTokenEmpty
+		return nil, exception.ErrTokenEmpty
 	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	tokens, err := jwt.ParseWithClaims(tokenString, &types.GIClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, exception.ErrUnknownAlg
 		}
 		return apiSecret, nil
 	})
 	if err != nil {
-		return exception.ErrInvalidToken
+		return nil, exception.ErrInvalidToken
 	}
-	claims, ok := token.Claims.(jwt.Claims)
-	if ok && token.Valid {
-		return nil
+	claim, ok := tokens.Claims.(*types.GIClaims)
+	if ok && tokens.Valid {
+		return claim, nil
 	}
-	return exception.ErrInvalidToken
+	return nil, exception.ErrInvalidToken
 }

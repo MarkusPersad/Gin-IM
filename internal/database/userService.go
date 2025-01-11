@@ -21,6 +21,8 @@ type UserService interface {
 	Register(ctx context.Context, register request.Register) error
 
 	Login(ctx *gin.Context, login request.Login) (string, error)
+
+	GetUserInfo(claims *types.GIClaims) (*model.User, error)
 }
 
 func (s *service) Register(ctx context.Context, register request.Register) error {
@@ -94,4 +96,21 @@ func (s *service) Login(ctx *gin.Context, login request.Login) (string, error) {
 	}
 	tokenString := token.GernerateToken(claims)
 	return tokenString, nil
+}
+
+func (s *service) GetUserInfo(claims *types.GIClaims) (*model.User, error) {
+	if len(claims.UserId) == 0 {
+		return nil, nil
+	}
+	var user *model.User
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Model(&user).Where("uuid = ?", claims.UserId).First(&user).Error; err != nil {
+			return exception.ErrNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

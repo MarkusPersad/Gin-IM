@@ -17,7 +17,7 @@ func JwtMiddleware(skipper func(c *gin.Context) bool) gin.HandlerFunc {
 
 		// 进行JWT认证，如果认证失败，则终止请求处理并返回错误信息。
 		if err := token.TokenValid(ctx); err != nil {
-			ctx.Error(err)
+			err = ctx.Error(err)
 			ctx.Abort()
 			return
 		}

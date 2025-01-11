@@ -11,6 +11,7 @@ var (
 	ErrNotFound     = NewError(1008, "数据不存在")
 	ErrPassword     = NewError(1009, "密码错误")
 	ErrAlreadyLogin = NewError(1010, "用户已登录")
+	//ErrUnauthorized = NewError(1011, "用户未授权")
 )
 
 type PersonalError struct {
