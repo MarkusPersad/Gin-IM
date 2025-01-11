@@ -6,4 +6,7 @@ const (
 	FIELD_ERROR_INFO = "field_error_info"
 	CAPTCHA          = "captcha:"
 	CAPTCHA_TIMEOUT  = 5 * 60
+	TOKEN_EXPIRE     = 24
+	USER_TOKEN_KEY   = "user_token:"
+	USER_TOKEN       = 60 * 60 * 24
 )

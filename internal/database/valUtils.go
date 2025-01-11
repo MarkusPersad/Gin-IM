@@ -1,9 +1,15 @@
 package database
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
+
+type ValkeyService interface {
+	SetAndTime(ctx context.Context, key, value string, timeout int64) error
+	GetValue(ctx context.Context, key string) string
+}
 
 // SetAndTime 是一个方法，用于在服务中设置一个具有过期时间的键值对。
 // 这个方法通过 valClient 执行 Setex 命令，将给定的 key 与 value 关联，并设置过期时间（秒）。
@@ -17,7 +23,7 @@ import (
 // 返回值:
 //
 //	error 类型，如果执行操作过程中发生错误，则返回该错误。
-func (s *service) SetAndTime(ctx *gin.Context, key, value string, timeout int64) error {
+func (s *service) SetAndTime(ctx context.Context, key, value string, timeout int64) error {
 	// 使用 valClient 执行 Setex 命令，设置键值对和过期时间。
 	return s.valClient.Do(ctx, s.valClient.B().Setex().Key(key).Seconds(timeout).Value(value).Build()).Error()
 }
@@ -35,7 +41,7 @@ func (s *service) SetAndTime(ctx *gin.Context, key, value string, timeout int64)
 // 返回值:
 //
 //	string - 键对应的值，如果获取失败或转换失败则返回空字符串。
-func (s *service) GetValue(ctx *gin.Context, key string) string {
+func (s *service) GetValue(ctx context.Context, key string) string {
 	// 执行获取值的操作，并检查是否有错误发生。
 	result := s.valClient.Do(ctx, s.valClient.B().Get().Key(key).Build())
 	if result.Error() != nil {

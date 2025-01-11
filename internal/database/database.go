@@ -1,10 +1,8 @@
 package database
 
 import (
-	"Gin-IM/pkg/request"
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog/log"
 	"github.com/valkey-io/valkey-go"
@@ -36,14 +34,8 @@ type Service interface {
 	Get(id string, clear bool) string
 
 	Verify(id, answer string, clear bool) bool
-
-	SetAndTime(ctx *gin.Context, key, value string, timeout int64) error
-
-	GetValue(ctx *gin.Context, key string) string
-
-	DelValue(ctx *gin.Context, key string) error
-
-	Register(ctx context.Context, register request.Register) error
+	ValkeyService
+	UserService
 }
 
 type service struct {

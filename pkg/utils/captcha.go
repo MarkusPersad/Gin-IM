@@ -12,14 +12,14 @@ type Captcha struct {
 	driver base64Captcha.Driver
 }
 
-func NewCaptcha(store base64Captcha.Store) Captcha {
+func NewCaptcha(store base64Captcha.Store) *Captcha {
 	mathDriver := base64Captcha.NewDriverMath(40, 160, 5, base64Captcha.OptionShowSineLine, &color.RGBA{
 		R: 254,
 		G: 254,
 		B: 254,
 		A: 254,
 	}, base64Captcha.DefaultEmbeddedFonts, []string{"wqy-microhei.ttc"})
-	return Captcha{
+	return &Captcha{
 		store:  store,
 		driver: mathDriver,
 	}

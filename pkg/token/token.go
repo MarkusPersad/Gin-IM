@@ -2,7 +2,6 @@ package token
 
 import (
 	"Gin-IM/pkg/exception"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
@@ -20,9 +19,14 @@ func init() {
 	}
 }
 
-func GernerateToken(claims jwt.Claims) (string, error) {
+func GernerateToken(claims jwt.Claims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(apiSecret)
+	if tokenString, err := token.SignedString(apiSecret); err == nil {
+		return tokenString
+	} else {
+		log.Logger.Error().Err(err).Msg("GernerateToken error")
+		return ""
+	}
 }
 
 func TokenValid(ctx *gin.Context) error {
@@ -32,7 +36,7 @@ func TokenValid(ctx *gin.Context) error {
 	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, exception.ErrUnknownAlg
 		}
 		return apiSecret, nil
 	})

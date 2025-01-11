@@ -8,6 +8,8 @@ var (
 	ErrUnknownAlg   = NewError(1004, "未知的加密算法")
 	ErrBadRequest   = NewError(1006, "请求参数错误")
 	ErrAlreadyExist = NewError(1007, "数据已存在")
+	ErrNotFound     = NewError(1008, "数据不存在")
+	ErrPassword     = NewError(1009, "密码错误")
 )
 
 type PersonalError struct {

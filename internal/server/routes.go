@@ -56,6 +56,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		{
 			account.GET("/getcaptcha", s.GetCaptcha)
 			account.POST("/register", s.Register)
+			account.POST("/login", s.Login)
 		}
 	}
 	return r
