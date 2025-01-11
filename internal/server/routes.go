@@ -55,6 +55,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		account := api.Group("/account")
 		{
 			account.GET("/getcaptcha", s.GetCaptcha)
+			account.POST("/register", s.Register)
 		}
 	}
 	return r

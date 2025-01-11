@@ -2,7 +2,9 @@ package server
 
 import (
 	"Gin-IM/internal/handler"
+	"Gin-IM/internal/model"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,7 +26,9 @@ func NewServer() *http.Server {
 
 		Handlers: handler.NewHandler(),
 	}
-
+	if err := NewServer.InitDBTables(&model.User{}); err != nil {
+		log.Logger.Fatal().Err(err).Msg("Failed to initialize database tables")
+	}
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),

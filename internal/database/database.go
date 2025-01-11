@@ -1,6 +1,7 @@
 package database
 
 import (
+	"Gin-IM/pkg/request"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -41,6 +42,8 @@ type Service interface {
 	GetValue(ctx *gin.Context, key string) string
 
 	DelValue(ctx *gin.Context, key string) error
+
+	Register(ctx context.Context, register request.Register) error
 }
 
 type service struct {
@@ -77,6 +80,7 @@ func New() Service {
 			SingularTable: isSingularTable,
 		},
 		SkipDefaultTransaction: true,
+		Logger:                 nil,
 	})
 	if err != nil {
 		log.Logger.Fatal().Err(err).Msg("failed to connect to database")

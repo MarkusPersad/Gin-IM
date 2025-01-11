@@ -6,6 +6,8 @@ var (
 	ErrInvalidToken = NewError(1002, "Token无效")
 	ErrTokenEmpty   = NewError(1003, "Token为空")
 	ErrUnknownAlg   = NewError(1004, "未知的加密算法")
+	ErrBadRequest   = NewError(1006, "请求参数错误")
+	ErrAlreadyExist = NewError(1007, "数据已存在")
 )
 
 type PersonalError struct {
