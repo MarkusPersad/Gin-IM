@@ -10,6 +10,7 @@ var (
 	ErrAlreadyExist = NewError(1007, "数据已存在")
 	ErrNotFound     = NewError(1008, "数据不存在")
 	ErrPassword     = NewError(1009, "密码错误")
+	ErrAlreadyLogin = NewError(1010, "用户已登录")
 )
 
 type PersonalError struct {

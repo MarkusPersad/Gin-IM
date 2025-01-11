@@ -63,6 +63,10 @@ func (s *service) Login(ctx *gin.Context, login request.Login) (string, error) {
 		if !utils.CompareHashPassword(user.Password, login.Password) {
 			return exception.ErrPassword
 		}
+		// 判断用户是否已经登录
+		if len(s.GetValue(ctx, defines.USER_TOKEN_KEY+user.Uuid)) != 0 {
+			return exception.ErrAlreadyLogin
+		}
 		// 更新用户状态为登录状态
 		if err := s.GetDB(ctx).Model(&user).Where("uuid = ?", user.Uuid).Update("status", enums.LogIn).Error; err != nil {
 			log.Logger.Error().Err(err).Msg("更新用户状态失败")
