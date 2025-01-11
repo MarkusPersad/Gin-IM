@@ -4,6 +4,7 @@ import (
 	_ "Gin-IM/cmd/api/docs"
 	"Gin-IM/internal/midleware"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -31,6 +32,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 			strings.Contains(ctx.Request.URL.Path, "/hello")
 	}))
 
+	// Gzip Middleware
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
+
 	// CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // Add your frontend URL
@@ -44,7 +48,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/hello", s.HelloWorldHandler)
 
 	r.GET("/health", s.HealthHandler)
-
 	return r
 }
 
