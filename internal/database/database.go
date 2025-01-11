@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog/log"
 	"github.com/valkey-io/valkey-go"
@@ -28,12 +29,18 @@ type Service interface {
 	GetDB(ctx context.Context) *gorm.DB
 	// Transaction executes a function within a transaction.
 	Transaction(ctx context.Context, fn func(ctx context.Context) error) error
-	//
+	// 实现 Base64CaptCha 的 Store 接口
 	Set(id string, value string) error
 
 	Get(id string, clear bool) string
 
 	Verify(id, answer string, clear bool) bool
+
+	SetAndTime(ctx *gin.Context, key, value string, timeout int64) error
+
+	GetValue(ctx *gin.Context, key string) string
+
+	DelValue(ctx *gin.Context, key string) error
 }
 
 type service struct {

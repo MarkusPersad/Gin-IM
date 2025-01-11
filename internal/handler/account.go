@@ -20,7 +20,7 @@ import (
 func (h *Handlers) GetCaptcha(ctx *gin.Context) {
 	capt := utils.NewCaptcha(h.db)
 	if database64, err := capt.Generate(); err != nil {
-		ctx.Error(exception.ErrCheckCode)
+		err = ctx.Error(exception.ErrCheckCode)
 	} else {
 		ctx.JSON(http.StatusOK, response.Success(0, "获取验证码成功", database64))
 	}
