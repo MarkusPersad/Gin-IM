@@ -2,13 +2,13 @@ package database
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 type ValkeyService interface {
 	SetAndTime(ctx context.Context, key, value string, timeout int64) error
 	GetValue(ctx context.Context, key string) string
+	DelValue(ctx context.Context, key string) error
 }
 
 // SetAndTime 是一个方法，用于在服务中设置一个具有过期时间的键值对。
@@ -69,11 +69,12 @@ func (s *service) GetValue(ctx context.Context, key string) string {
 // 返回值:
 //
 //	error - 如果删除操作失败，则返回错误；否则返回nil
-func (s *service) DelValue(ctx *gin.Context, key string) error {
+func (s *service) DelValue(ctx context.Context, key string) error {
 	// 执行Del命令以删除指定的键
 	if err := s.valClient.Do(ctx, s.valClient.B().Del().Key(key).Build()).Error(); err != nil {
 		// 如果发生错误，记录错误日志并返回错误
 		log.Logger.Error().Err(err).Msg("valkey del error")
+		// 返回错误
 		return err
 	}
 	// 如果操作成功，返回nil

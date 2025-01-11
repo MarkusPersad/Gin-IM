@@ -58,6 +58,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			account.POST("/register", s.Register)
 			account.POST("/login", s.Login)
 			account.GET("/getuserinfo", s.GetUserInfo)
+			account.GET("/logout", s.Logout)
 		}
 	}
 	return r

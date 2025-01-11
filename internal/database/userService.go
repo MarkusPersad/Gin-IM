@@ -22,7 +22,9 @@ type UserService interface {
 
 	Login(ctx *gin.Context, login request.Login) (string, error)
 
-	GetUserInfo(claims *types.GIClaims) (*model.User, error)
+	GetUserInfo(ctx *gin.Context, claims *types.GIClaims) (*model.User, error)
+
+	Logout(ctx *gin.Context, claims *types.GIClaims) error
 }
 
 func (s *service) Register(ctx context.Context, register request.Register) error {
@@ -98,9 +100,9 @@ func (s *service) Login(ctx *gin.Context, login request.Login) (string, error) {
 	return tokenString, nil
 }
 
-func (s *service) GetUserInfo(claims *types.GIClaims) (*model.User, error) {
+func (s *service) GetUserInfo(ctx *gin.Context, claims *types.GIClaims) (*model.User, error) {
 	if len(claims.UserId) == 0 {
-		return nil, nil
+		return nil, exception.ErrTokenEmpty
 	}
 	var user *model.User
 	err := s.Transaction(ctx, func(ctx context.Context) error {
@@ -113,4 +115,26 @@ func (s *service) GetUserInfo(claims *types.GIClaims) (*model.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (s *service) Logout(ctx *gin.Context, claims *types.GIClaims) error {
+	if len(claims.UserId) == 0 {
+		return exception.ErrTokenEmpty
+	}
+	var user model.User
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Model(&user).Where("uuid = ?", claims.UserId).Update("status", enums.LogOut).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("更新用户状态失败")
+			return err
+		}
+		if err := s.DelValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); err != nil {
+			log.Logger.Error().Err(err).Msg("删除用户token失败")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

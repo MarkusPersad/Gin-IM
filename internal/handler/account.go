@@ -8,7 +8,6 @@ import (
 	"Gin-IM/pkg/utils"
 	"Gin-IM/pkg/validates"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -117,17 +116,39 @@ func (h *Handlers) Login(ctx *gin.Context) {
 // @Failure 200 {object} response.Response "返回结果"
 // @Router /api/account/getuserinfo [get]
 func (h *Handlers) GetUserInfo(ctx *gin.Context) {
-	log.Logger.Info().Str("Authorization", ctx.GetHeader("Authorization"))
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
 		err = ctx.Error(err)
 		return
 	}
-	if user, err := h.db.GetUserInfo(claims); err != nil {
+	if user, err := h.db.GetUserInfo(ctx, claims); err != nil {
 		err = ctx.Error(err)
 		return
 	} else {
 		data := user
 		ctx.JSON(http.StatusOK, response.Success(0, "获取用户信息成功", data))
 	}
+}
+
+// Logout 退出登录
+// @Summary 退出登录
+// @Description 退出登录
+// @Tags 账户管理
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "Bearer token令牌"
+// @Success 200 {object} response.Response "返回结果"
+// @Failure 200 {object} response.Response "返回结果"
+// @Router /api/account/logout [get]
+func (h *Handlers) Logout(ctx *gin.Context) {
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		err = ctx.Error(err)
+		return
+	}
+	if err := h.db.Logout(ctx, claims); err != nil {
+		err = ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "退出成功", nil))
 }
