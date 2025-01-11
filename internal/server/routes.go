@@ -3,6 +3,7 @@ package server
 import (
 	_ "Gin-IM/cmd/api/docs"
 	"Gin-IM/internal/midleware"
+	"Gin-IM/pkg/response"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -18,22 +19,23 @@ func (s *Server) RegisterRoutes() http.Handler {
 	//Logger() 插件 Recover() 插件
 	r.Use(GinLogger(), GinRecovery(true))
 
+	// Gzip Middleware
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
+
 	//Timeout Middleware
 	r.Use(midleware.TimeoutMiddleware())
 
 	// Error Middleware
 	r.Use(midleware.ErrorHandler())
 
-	// JWT Middleware
+	//JWT Middleware
 	r.Use(midleware.JwtMiddleware(func(ctx *gin.Context) bool {
 		return strings.Contains(ctx.Request.URL.Path, "/api/account/login") ||
 			strings.Contains(ctx.Request.URL.Path, "/api/account/register") ||
 			strings.Contains(ctx.Request.URL.Path, "/api/account/getcaptcha") ||
-			strings.Contains(ctx.Request.URL.Path, "/hello")
+			strings.Contains(ctx.Request.URL.Path, "/hello") ||
+			strings.Contains(ctx.Request.URL.Path, "/swagger/")
 	}))
-
-	// Gzip Middleware
-	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// CORS
 	r.Use(cors.New(cors.Config{
@@ -48,6 +50,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/hello", s.HelloWorldHandler)
 
 	r.GET("/health", s.HealthHandler)
+	api := r.Group("/api")
+	{
+		account := api.Group("/account")
+		{
+			account.GET("/getcaptcha", s.GetCaptcha)
+		}
+	}
 	return r
 }
 
@@ -62,5 +71,5 @@ func (s *Server) RegisterRoutes() http.Handler {
 func (s *Server) HelloWorldHandler(c *gin.Context) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, response.Success(0, "Success", resp))
 }
