@@ -18,7 +18,7 @@ import (
 )
 
 type UserService interface {
-	Register(ctx context.Context, register request.Register) error
+	Register(ctx *gin.Context, register request.Register) error
 
 	Login(ctx *gin.Context, login request.Login) (string, error)
 
@@ -27,7 +27,7 @@ type UserService interface {
 	Logout(ctx *gin.Context, claims *types.GIClaims) error
 }
 
-func (s *service) Register(ctx context.Context, register request.Register) error {
+func (s *service) Register(ctx *gin.Context, register request.Register) error {
 	return s.Transaction(ctx, func(ctx context.Context) error {
 		var user model.User
 		if err := s.GetDB(ctx).Model(&user).Where("email = ? or username = ?", register.Email, register.UserName).First(&user).Error; err == nil {
@@ -38,6 +38,7 @@ func (s *service) Register(ctx context.Context, register request.Register) error
 		user.Username = register.UserName
 		user.Password = utils.GernerateHashPassword(register.Password)
 		if err := s.GetDB(ctx).Create(&user).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("创建用户失败")
 			return err
 		}
 		return nil
