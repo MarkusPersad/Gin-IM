@@ -64,6 +64,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		friend := api.Group("/friend")
 		{
 			friend.POST("/add", s.AddFriend)
+			friend.GET("/list", s.GetFriendList)
 		}
 	}
 	return r
