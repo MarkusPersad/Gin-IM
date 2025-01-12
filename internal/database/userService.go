@@ -25,6 +25,8 @@ type UserService interface {
 	GetUserInfo(ctx *gin.Context, claims *types.GIClaims) (*model.User, error)
 
 	Logout(ctx *gin.Context, claims *types.GIClaims) error
+
+	Search(ctx *gin.Context, search request.UserSearch) (*model.User, error)
 }
 
 func (s *service) Register(ctx *gin.Context, register request.Register) error {
@@ -102,9 +104,6 @@ func (s *service) Login(ctx *gin.Context, login request.Login) (string, error) {
 }
 
 func (s *service) GetUserInfo(ctx *gin.Context, claims *types.GIClaims) (*model.User, error) {
-	if len(claims.UserId) == 0 {
-		return nil, exception.ErrTokenEmpty
-	}
 	var user *model.User
 	err := s.Transaction(ctx, func(ctx context.Context) error {
 		if err := s.GetDB(ctx).Model(&user).Where("uuid = ?", claims.UserId).First(&user).Error; err != nil {
@@ -119,9 +118,6 @@ func (s *service) GetUserInfo(ctx *gin.Context, claims *types.GIClaims) (*model.
 }
 
 func (s *service) Logout(ctx *gin.Context, claims *types.GIClaims) error {
-	if len(claims.UserId) == 0 {
-		return exception.ErrTokenEmpty
-	}
 	var user model.User
 	err := s.Transaction(ctx, func(ctx context.Context) error {
 		if err := s.GetDB(ctx).Model(&user).Where("uuid = ?", claims.UserId).Update("status", enums.LogOut).Error; err != nil {
@@ -138,4 +134,19 @@ func (s *service) Logout(ctx *gin.Context, claims *types.GIClaims) error {
 		return err
 	}
 	return nil
+}
+
+func (s *service) Search(ctx *gin.Context, search request.UserSearch) (*model.User, error) {
+	var user model.User
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Model(&user).Where("username = ?", search.UserInfo).Or("email = ?", search.UserInfo).First(&user).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("查询用户失败")
+			return exception.ErrNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

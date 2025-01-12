@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"Gin-IM/pkg/defines"
 	"Gin-IM/pkg/exception"
 	"Gin-IM/pkg/request"
 	"Gin-IM/pkg/response"
@@ -23,7 +24,7 @@ import (
 func (h *Handlers) GetCaptcha(ctx *gin.Context) {
 	capt := utils.NewCaptcha(h.db)
 	if database64, err := capt.Generate(); err != nil {
-		err = ctx.Error(exception.ErrCheckCode)
+		_ = ctx.Error(exception.ErrCheckCode)
 		return
 	} else {
 		ctx.JSON(http.StatusOK, response.Success(0, "获取验证码成功", database64))
@@ -43,19 +44,19 @@ func (h *Handlers) GetCaptcha(ctx *gin.Context) {
 func (h *Handlers) Register(ctx *gin.Context) {
 	var register request.Register
 	if err := ctx.BindJSON(&register); err != nil {
-		err = ctx.Error(exception.ErrBadRequest)
+		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
 	if err := validates.Validate(&register); err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 	if err := utils.NewCaptcha(h.db).Verify(register.CheckCodeKey, register.CheckCode, true); err != nil {
-		err = ctx.Error(exception.ErrCheckCode)
+		_ = ctx.Error(exception.ErrCheckCode)
 		return
 	}
 	if err := h.db.Register(ctx, register); err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.JSON(http.StatusOK, response.Success(0, "注册成功", nil))
@@ -76,28 +77,28 @@ func (h *Handlers) Login(ctx *gin.Context) {
 	var login request.Login
 	if err := ctx.BindJSON(&login); err != nil {
 		// 如果绑定失败，返回错误响应并结束函数执行。
-		err = ctx.Error(exception.ErrBadRequest)
+		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
 
 	// 验证登录信息的合法性。
 	if err := validates.Validate(&login); err != nil {
 		// 如果验证失败，返回错误信息并结束函数执行。
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// 验证用户提供的验证码。
 	if err := utils.NewCaptcha(h.db).Verify(login.CheckCodeKey, login.CheckCode, true); err != nil {
 		// 如果验证码验证失败，返回错误信息并结束函数执行。
-		err = ctx.Error(exception.ErrCheckCode)
+		_ = ctx.Error(exception.ErrCheckCode)
 		return
 	}
 
 	// 调用数据库接口进行用户登录验证。
 	if tokens, err := h.db.Login(ctx, login); err != nil {
 		// 如果登录验证失败，返回错误信息并结束函数执行。
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	} else {
 		// 如果登录成功，返回成功响应和生成的用户令牌。
@@ -118,15 +119,22 @@ func (h *Handlers) Login(ctx *gin.Context) {
 func (h *Handlers) GetUserInfo(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
 	if user, err := h.db.GetUserInfo(ctx, claims); err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	} else {
-		data := user
-		ctx.JSON(http.StatusOK, response.Success(0, "获取用户信息成功", data))
+		ctx.JSON(http.StatusOK, response.Success(0, "获取用户信息成功", user))
 	}
 }
 
@@ -143,12 +151,62 @@ func (h *Handlers) GetUserInfo(ctx *gin.Context) {
 func (h *Handlers) Logout(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
 	if err := h.db.Logout(ctx, claims); err != nil {
-		err = ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.JSON(http.StatusOK, response.Success(0, "退出成功", nil))
+}
+
+// Search 搜索用户
+// @Summary 搜索用户
+// @Description 搜索用户
+// @Tags 账户管理
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "Bearer token令牌"
+// @Param userSearch body request.UserSearch true "搜索信息"
+// @Success 200 {object} response.Response "返回结果"
+// @Failure 200 {object} response.Response "返回结果"
+// @Router /api/account/search [post]
+func (h *Handlers) Search(ctx *gin.Context) {
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	var userSearch request.UserSearch
+	if err := ctx.BindJSON(&userSearch); err != nil {
+		_ = ctx.Error(exception.ErrBadRequest)
+		return
+	}
+	if err := validates.Validate(&userSearch); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if user, err := h.db.Search(ctx, userSearch); err != nil {
+		_ = ctx.Error(err)
+		return
+	} else {
+		ctx.JSON(http.StatusOK, response.Success(0, "搜索成功", user))
+	}
 }

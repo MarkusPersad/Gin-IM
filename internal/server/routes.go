@@ -59,6 +59,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 			account.POST("/login", s.Login)
 			account.GET("/getuserinfo", s.GetUserInfo)
 			account.GET("/logout", s.Logout)
+			account.POST("/search", s.Search)
+		}
+		friend := api.Group("/friend")
+		{
+			friend.POST("/add", s.AddFriend)
 		}
 	}
 	return r

@@ -21,7 +21,6 @@ func JwtMiddleware(skipper func(c *gin.Context) bool) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-
 		// 认证成功，继续执行下一个中间件或处理函数。
 		ctx.Next()
 	}

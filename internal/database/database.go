@@ -36,6 +36,7 @@ type Service interface {
 	Verify(id, answer string, clear bool) bool
 	ValkeyService
 	UserService
+	UserFriendService
 }
 
 type service struct {
