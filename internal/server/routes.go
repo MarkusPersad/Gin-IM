@@ -33,7 +33,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 		return strings.Contains(ctx.Request.URL.Path, "/api/account/login") ||
 			strings.Contains(ctx.Request.URL.Path, "/api/account/register") ||
 			strings.Contains(ctx.Request.URL.Path, "/api/account/getcaptcha") ||
-			strings.Contains(ctx.Request.URL.Path, "/hello") ||
 			strings.Contains(ctx.Request.URL.Path, "/swagger/")
 	}))
 
@@ -46,8 +45,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 	}))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	r.GET("/hello", s.HelloWorldHandler)
 
 	r.GET("/health", s.HealthHandler)
 	api := r.Group("/api")
@@ -68,6 +65,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 			friend.POST("/black", s.AddToBlackList)
 			friend.GET("/blacklist", s.GetBlackList)
 			friend.POST("/cancelblack", s.CancelBlack)
+			friend.POST("/delete", s.DeleteFriend)
+			friend.POST("/agree", s.AgreeFriendRequest)
 		}
 	}
 	return r
