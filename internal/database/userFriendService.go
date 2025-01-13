@@ -15,6 +15,7 @@ type UserFriendService interface {
 	AddFriend(ctx *gin.Context, claims *types.GIClaims, request request.FriendRequest) error
 	GetFriendList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error)
 	AddToBlackList(ctx *gin.Context, claims *types.GIClaims, friendInfo request.FriendRequest) error
+	GetBlackList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error)
 }
 
 func (s *service) AddFriend(ctx *gin.Context, claims *types.GIClaims, request request.FriendRequest) error {
@@ -101,4 +102,22 @@ func (s *service) AddToBlackList(ctx *gin.Context, claims *types.GIClaims, frien
 		}
 		return nil
 	})
+}
+
+func (s *service) GetBlackList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error) {
+	var blackList []types.Friend
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Unscoped().Model(&model.UserFriend{}).Select("user.email, user.username, user.avatar").
+			Joins("JOIN user ON user_friend.friendid = user.uuid").
+			Where("user_friend.userid = ? AND user_friend.deleted_at IS NOT NULL", claims.UserId).
+			Scan(&blackList).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("查询失败")
+			return exception.ErrNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blackList, nil
 }

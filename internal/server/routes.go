@@ -66,6 +66,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			friend.POST("/add", s.AddFriend)
 			friend.GET("/list", s.GetFriendList)
 			friend.POST("/black", s.AddToBlackList)
+			friend.GET("/blacklist", s.GetBlackList)
 		}
 	}
 	return r
