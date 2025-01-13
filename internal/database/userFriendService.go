@@ -56,7 +56,6 @@ func checkIsFriend(tx *gorm.DB, userId, friendId string) error {
 
 func (s *service) GetFriendList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error) {
 	var friendList []types.Friend
-	log.Logger.Info().Msgf("userId:%v", claims.UserId)
 	err := s.Transaction(ctx, func(ctx context.Context) error {
 		if err := s.GetDB(ctx).Model(&model.UserFriend{}).Select("user.email, user.username, user.avatar").
 			Joins("JOIN user ON user_friend.friendid = user.uuid").
