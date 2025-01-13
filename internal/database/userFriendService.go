@@ -16,6 +16,7 @@ type UserFriendService interface {
 	GetFriendList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error)
 	AddToBlackList(ctx *gin.Context, claims *types.GIClaims, friendInfo request.FriendRequest) error
 	GetBlackList(ctx *gin.Context, claims *types.GIClaims) ([]types.Friend, error)
+	CancelBlack(ctx *gin.Context, claims *types.GIClaims, friendInfo request.FriendRequest) error
 }
 
 func (s *service) AddFriend(ctx *gin.Context, claims *types.GIClaims, request request.FriendRequest) error {
@@ -120,4 +121,19 @@ func (s *service) GetBlackList(ctx *gin.Context, claims *types.GIClaims) ([]type
 		return nil, err
 	}
 	return blackList, nil
+}
+
+func (s *service) CancelBlack(ctx *gin.Context, claims *types.GIClaims, friendInfo request.FriendRequest) error {
+	return s.Transaction(ctx, func(ctx context.Context) error {
+		var friend model.User
+		if err := s.GetDB(ctx).Model(&model.User{}).Where("username = ?", friendInfo.FriendInfo).Or("email = ?", friendInfo.FriendInfo).First(&friend).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("查询失败")
+			return exception.ErrNotFound
+		}
+		if err := s.GetDB(ctx).Unscoped().Model(&model.UserFriend{}).Where("userid = ? AND friendid = ?", claims.UserId, friend.Uuid).Or("userid = ? AND friendid = ?", friend.Uuid, claims.UserId).Update("deleted_at", nil).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("更新失败")
+			return err
+		}
+		return nil
+	})
 }

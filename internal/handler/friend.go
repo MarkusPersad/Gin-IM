@@ -156,3 +156,44 @@ func (h *Handlers) GetBlackList(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, response.Success(0, "查询成功", blackList))
 	}
 }
+
+// CancelBlack 取消拉黑
+// @Summary 取消拉黑
+// @Description 取消拉黑
+// @Tags 好友
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token令牌"
+// @Param friend_request body request.FriendRequest true "好友信息"
+// @Success 200 {object} response.Response "成功"
+// @Failure 200 {object} response.Response "失败"
+// @Router /api/friend/cancelblack [post]
+func (h *Handlers) CancelBlack(ctx *gin.Context) {
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	var friendRequest request.FriendRequest
+	if err := ctx.BindJSON(&friendRequest); err != nil {
+		_ = ctx.Error(exception.ErrBadRequest)
+		return
+	}
+	if err := validates.Validate(&friendRequest); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err := h.db.CancelBlack(ctx, claims, friendRequest); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "取消拉黑成功", nil))
+}
