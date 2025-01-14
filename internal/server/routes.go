@@ -3,7 +3,6 @@ package server
 import (
 	_ "Gin-IM/cmd/api/docs"
 	"Gin-IM/internal/midleware"
-	"Gin-IM/pkg/response"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -70,18 +69,4 @@ func (s *Server) RegisterRoutes() http.Handler {
 		}
 	}
 	return r
-}
-
-// HelloWorldHandler godoc
-// @Summary Hello World
-// @Description Hello World
-// @Tags HelloWorld
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} map[string]string
-// @Router /hello [get]
-func (s *Server) HelloWorldHandler(c *gin.Context) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-	c.JSON(http.StatusOK, response.Success(0, "Success", resp))
 }
