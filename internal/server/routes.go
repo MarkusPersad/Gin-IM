@@ -67,6 +67,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 			friend.POST("/delete", s.DeleteFriend)
 			friend.POST("/agree", s.AgreeFriendRequest)
 		}
+		file := api.Group("/file")
+		{
+			file.POST("/upload", s.UploadFile)
+		}
 	}
 	return r
 }

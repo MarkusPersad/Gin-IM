@@ -12,6 +12,7 @@ var (
 	ErrPassword     = NewError(1009, "密码错误")
 	ErrAlreadyLogin = NewError(1010, "用户已登录")
 	ErrLoginTimeout = NewError(1011, "登录超时")
+	ErrUploadFile   = NewError(1012, "上传文件失败")
 )
 
 type PersonalError struct {

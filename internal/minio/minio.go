@@ -18,10 +18,12 @@ import (
 
 func init() {
 	once.Do(func() {
-		if maxSize, err := strconv.Atoi(os.Getenv("MINIO_MAX_SIZE")); err != nil {
-			log.Logger.Error().Msg("minio max size error")
-		} else {
-			maxFileSize = int64(maxSize)
+		if maxFileSize == 0 {
+			if maxSize, err := strconv.Atoi(os.Getenv("MINIO_MAX_SIZE")); err != nil {
+				log.Logger.Error().Msg("minio max size error")
+			} else {
+				maxFileSize = int64(maxSize)
+			}
 		}
 	})
 }
@@ -67,7 +69,7 @@ func NewClient(useSSL bool) *MinIOStore {
 			minIOStore = &MinIOStore{
 				Client: client,
 			}
-			log.Info().Msg("minio client init success")
+			log.Info().Msgf("minio client init success ,endpoint:%s", minIOStore.EndpointURL().String())
 		}
 	})
 	// 返回初始化后的 minIOStore 实例。
@@ -105,7 +107,6 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 		log.Logger.Error().Err(err).Msg("minio create bucket error")
 		return err
 	}
-
 	// 定义公共读取权限策略，允许任何人获取桶中的对象。
 	policy := `{
 		"Version": "2012-10-17",

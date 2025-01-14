@@ -26,7 +26,7 @@ func NewServer() *http.Server {
 
 		Handlers: handler.NewHandler(),
 	}
-	if err := NewServer.InitDBTables(&model.User{}, &model.UserFriend{}, &model.Group{}); err != nil {
+	if err := NewServer.InitDBTables(&model.User{}, &model.UserFriend{}, &model.Group{}, &model.File{}); err != nil {
 		log.Logger.Fatal().Err(err).Msg("Failed to initialize database tables")
 	}
 	// Declare Server config

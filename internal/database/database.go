@@ -37,6 +37,7 @@ type Service interface {
 	ValkeyService
 	UserService
 	UserFriendService
+	FileService
 }
 
 type service struct {
