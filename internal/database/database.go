@@ -1,6 +1,7 @@
 package database
 
 import (
+	"Gin-IM/internal/minio"
 	"context"
 	"fmt"
 	_ "github.com/joho/godotenv/autoload"
@@ -43,6 +44,7 @@ type Service interface {
 type service struct {
 	db        *gorm.DB
 	valClient valkey.Client
+	minClient *minio.MinIOStore
 }
 
 var (
@@ -98,6 +100,7 @@ func New() Service {
 	dbInstance = &service{
 		db:        db,
 		valClient: valClient,
+		minClient: minio.NewClient(false),
 	}
 	return dbInstance
 }

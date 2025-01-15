@@ -1,0 +1,81 @@
+package database
+
+import (
+	"Gin-IM/internal/model"
+	"Gin-IM/pkg/exception"
+	"Gin-IM/pkg/request"
+	"Gin-IM/pkg/types"
+	"context"
+	"github.com/rs/zerolog/log"
+)
+
+type FileService interface {
+	UploadFile(ctx context.Context, claims *types.GIClaims, objectName, fileName, md5, sha1 string) error
+	CheckIsExist(ctx context.Context, md5, sha1 string) bool
+	GetShortUrl(ctx context.Context, request request.FileDownload) (string, string)
+	DeleteFile(ctx context.Context, claims *types.GIClaims, download request.FileDownload) error
+}
+
+func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, objectName, fileName, md5, sha1 string) error {
+	return s.Transaction(ctx, func(ctx context.Context) error {
+		var file model.File
+		file.ObjectName = objectName
+		file.FileName = fileName
+		file.Owner = claims.UserId
+		file.Md5 = md5
+		file.Sha1 = sha1
+		if err := s.GetDB(ctx).Model(&model.File{}).
+			FirstOrCreate(&file, model.File{Md5: file.Md5, Sha1: file.Sha1, Owner: file.Owner}).
+			Error; err != nil {
+			log.Logger.Error().Err(err).Msg("failed to create file")
+			return err
+		}
+		return nil
+	})
+}
+
+func (s *service) CheckIsExist(ctx context.Context, md5, sha1 string) bool {
+	if err := s.GetDB(ctx).Model(&model.File{}).Where("md5 = ? and sha1 = ?", md5, sha1).First(&model.File{}).Error; err != nil {
+		return false
+	}
+	return true
+}
+
+func (s *service) GetShortUrl(ctx context.Context, request request.FileDownload) (string, string) {
+	var file model.File
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Model(&model.File{}).
+			Where("md5 = ?", request.Md5).
+			Where("sha1 = ?", request.Sha1).
+			First(&file).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("failed to get file")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return "", ""
+	}
+	return file.ObjectName, file.FileName
+}
+
+func (s *service) DeleteFile(ctx context.Context, claims *types.GIClaims, download request.FileDownload) error {
+	return s.Transaction(ctx, func(ctx context.Context) error {
+		var file model.File
+		if err := s.GetDB(ctx).Model(&model.File{}).
+			Where("md5 = ?", download.Md5).
+			Where("sha1 = ?", download.Sha1).
+			First(&file).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("failed to get file")
+			return exception.ErrNotFound
+		}
+		if file.Owner != claims.UserId {
+			return exception.ErrPermissionDenied
+		}
+		if err := s.GetDB(ctx).Unscoped().Delete(&file).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("failed to delete file")
+			return exception.ErrFileDelete
+		}
+		return nil
+	})
+}

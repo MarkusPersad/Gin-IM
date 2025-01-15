@@ -3,6 +3,7 @@ package minio
 import (
 	"Gin-IM/pkg/defines"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -185,4 +186,66 @@ func (s *MinIOStore) GetFileSign(ctx context.Context, objectName string) (string
 		// 如果成功生成预签名URL，则返回URL字符串和nil错误
 		return preSignedURL.String(), nil
 	}
+}
+
+// DeleteFiles 删除指定的文件。
+//
+// ctx: 上下文，用于传递请求、超时等信息。
+// forceDelete: 是否强制删除被治理策略保护的对象。
+// objectNames: 要删除的对象名称列表。
+//
+// 返回错误，如果删除过程中遇到任何问题。
+func (s *MinIOStore) DeleteFiles(ctx context.Context, forceDelete bool, objectNames ...string) error {
+	// 创建一个通道，用于传递要删除的对象信息。
+	objectsCh := make(chan minio.ObjectInfo)
+
+	// 启动一个goroutine，将所有要删除的对象名称发送到通道中。
+	go func() {
+		defer close(objectsCh)
+		for _, value := range objectNames {
+			objectsCh <- minio.ObjectInfo{Key: value}
+		}
+	}()
+
+	// 用于收集删除过程中遇到的错误。
+	var errs []error
+
+	// 调用RemoveObjects方法开始删除对象，它会返回一个错误通道。
+	errCh := s.RemoveObjects(ctx, bucket, objectsCh, minio.RemoveObjectsOptions{GovernanceBypass: forceDelete})
+
+	// 遍历错误通道，记录并收集删除失败的对象错误。
+	for errDel := range errCh {
+		log.Logger.Error().Err(errDel.Err).Msgf("failed to Delete %s", errDel.ObjectName)
+		errs = append(errs, errDel.Err)
+	}
+
+	// 如果有对象删除失败，则返回一个汇总错误。
+	if len(errs) > 0 {
+		return errors.New("some objects failed to delete")
+	}
+
+	// 所有对象删除成功，返回nil。
+	return nil
+}
+
+// CheckObjectExist 检查指定的对象是否存在于MinIO存储中。
+// 该方法通过尝试获取对象的元数据来判断对象是否存在。如果获取过程中
+// 出现错误，即认为对象不存在。
+//
+// 参数:
+//
+//	ctx - 上下文，用于传递请求的上下文信息，如取消信号、超时等。
+//	objectName - 对象的名称，用于指定需要检查的对象。
+//
+// 返回值:
+//
+//	bool - 如果对象存在，则返回true；否则返回false。
+func (s *MinIOStore) CheckObjectExist(ctx context.Context, objectName string) bool {
+	// 尝试获取对象的元数据，如果不为空且没有发生错误，则认为对象存在。
+	if _, err := s.StatObject(ctx, bucket, objectName, minio.StatObjectOptions{}); err != nil {
+		// 如果发生错误，即认为对象不存在，返回false。
+		return false
+	}
+	// 如果没有发生错误，即认为对象存在，返回true。
+	return true
 }

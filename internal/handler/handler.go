@@ -2,20 +2,17 @@ package handler
 
 import (
 	"Gin-IM/internal/database"
-	"Gin-IM/internal/minio"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type Handlers struct {
-	db          database.Service
-	minioClient *minio.MinIOStore
+	db database.Service
 }
 
 func NewHandler() *Handlers {
 	return &Handlers{
-		db:          database.New(),
-		minioClient: minio.NewClient(false),
+		db: database.New(),
 	}
 }
 

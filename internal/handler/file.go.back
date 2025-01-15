@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-// UploadFile godoc
+// UploadFile
 // @Summary 上传文件
 // @Description 用户上传文件到服务器，并存储在 MinIO 中
 // @Tags 文件管理
@@ -62,14 +62,28 @@ func (h *Handlers) UploadFile(ctx *gin.Context) {
 	}
 	fileType := utils.GetFileType(strings.TrimPrefix(filepath.Ext(fileHeader.Filename), "."))
 	objectName := fileType + "/" + md5Value + sha1Value + filepath.Ext(fileHeader.Filename)
-	if err := h.db.UploadFile(ctx, claims, file, objectName, fileHeader.Filename, md5Value, sha1Value, fileHeader.Size); err != nil {
-		_ = ctx.Error(err)
+	if h.db.CheckIsExist(ctx, md5Value, sha1Value) {
+		ctx.JSON(http.StatusOK, response.Success(0, "文件已存在", nil))
 		return
 	}
-	ctx.JSON(http.StatusOK, response.Success(0, "上传成功", fileHeader.Filename))
+	if err := h.minioClient.UploadFile(ctx, file, objectName, fileHeader.Size); err != nil {
+		log.Logger.Error().Err(err).Msg("failed to upload file")
+		_ = ctx.Error(exception.ErrUploadFile)
+		return
+	}
+	if err := h.db.UploadFile(ctx, claims, objectName, fileHeader.Filename, md5Value, sha1Value); err != nil {
+		log.Logger.Error().Err(err).Msg("failed to upload file")
+		_ = ctx.Error(exception.ErrUploadFile)
+		if err := h.minioClient.DeleteFiles(ctx, true, objectName); err != nil {
+			_ = ctx.Error(exception.ErrUploadFile)
+			return
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "上传成功", nil))
 }
 
-// GetShortUrl godoc
+// GetShortUrl
 // @Summary 获取文件下载地址
 // @Description 获取文件下载地址
 // @Tags 文件管理
@@ -95,7 +109,7 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 		return
 	}
 	var fileDownload request.FileDownload
-	if err := ctx.BindJSON(&fileDownload); err != nil {
+	if err := ctx.ShouldBindJSON(&fileDownload); err != nil {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
@@ -103,26 +117,32 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if url := h.db.GetShortURL(ctx, fileDownload); url == "" {
+	if !h.db.CheckIsExist(ctx, fileDownload.Md5, fileDownload.Sha1) {
+		_ = ctx.Error(exception.ErrNotFound)
+		return
+	}
+	var shortName, fileName string
+	if shortName, fileName = h.db.GetShortUrl(ctx, fileDownload); shortName == "" || fileName == "" {
+		_ = ctx.Error(exception.ErrNotFound)
+		return
+	}
+	if !h.minioClient.CheckObjectExist(ctx, shortName) {
+		_ = ctx.Error(exception.ErrNotFound)
+		if err := h.db.DeleteFile(ctx, claims, fileDownload); err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		return
+	}
+	if shortUrl, err := h.minioClient.GetFileSign(ctx, shortName); err != nil {
 		_ = ctx.Error(exception.ErrFileUrl)
 		return
 	} else {
-		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", url))
+		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", shortUrl))
 	}
 }
 
-// DeleteFile godoc
-// @Summary 删除文件
-// @Description 删除文件
-// @Tags 文件管理
-// @Accept json
-// @Produce json
-// @Param Authorization header string true "Bearer Token令牌"
-// @Param fileDelete body request.FileDelete true "文件删除信息"
-// @Success 200 {object} response.Response "成功"
-// @Failure 200 {object} response.Response "失败"
-// @Router /api/file/delete [post]
-func (h Handlers) DeleteFile(ctx *gin.Context) {
+func (h *Handlers) DeleteFile(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -136,8 +156,8 @@ func (h Handlers) DeleteFile(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
-	var fileDelete request.FileDelete
-	if err := ctx.BindJSON(&fileDelete); err != nil {
+	var fileDelete request.FileDownload
+	if err := ctx.ShouldBindJSON(&fileDelete); err != nil {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
@@ -145,9 +165,17 @@ func (h Handlers) DeleteFile(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	var objectName, fileName string
+	if objectName, fileName = h.db.GetShortUrl(ctx, fileDelete); objectName == "" || fileName == "" {
+		_ = ctx.Error(exception.ErrNotFound)
+		return
+	}
 	if err := h.db.DeleteFile(ctx, claims, fileDelete); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, response.Success(0, "删除成功", nil))
+	if err := h.minioClient.DeleteFiles(ctx, true, objectName); err != nil {
+		_ = ctx.Error(exception.ErrFileDelete)
+		return
+	}
 }

@@ -14,6 +14,8 @@ var (
 	ErrLoginTimeout = NewError(1011, "登录超时")
 	ErrUploadFile   = NewError(1012, "上传文件失败")
 	ErrFileUrl      = NewError(1013, "文件链接获取失败")
+	//ErrPermissionDenied = NewError(1014, "权限不足")
+	ErrFileDelete = NewError(1015, "文件删除失败")
 )
 
 type PersonalError struct {
