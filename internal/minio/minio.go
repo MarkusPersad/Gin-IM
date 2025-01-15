@@ -227,25 +227,3 @@ func (s *MinIOStore) DeleteFiles(ctx context.Context, forceDelete bool, objectNa
 	// 所有对象删除成功，返回nil。
 	return nil
 }
-
-// CheckObjectExist 检查指定的对象是否存在于MinIO存储中。
-// 该方法通过尝试获取对象的元数据来判断对象是否存在。如果获取过程中
-// 出现错误，即认为对象不存在。
-//
-// 参数:
-//
-//	ctx - 上下文，用于传递请求的上下文信息，如取消信号、超时等。
-//	objectName - 对象的名称，用于指定需要检查的对象。
-//
-// 返回值:
-//
-//	bool - 如果对象存在，则返回true；否则返回false。
-func (s *MinIOStore) CheckObjectExist(ctx context.Context, objectName string) bool {
-	// 尝试获取对象的元数据，如果不为空且没有发生错误，则认为对象存在。
-	if _, err := s.StatObject(ctx, bucket, objectName, minio.StatObjectOptions{}); err != nil {
-		// 如果发生错误，即认为对象不存在，返回false。
-		return false
-	}
-	// 如果没有发生错误，即认为对象存在，返回true。
-	return true
-}
