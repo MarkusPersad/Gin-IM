@@ -66,12 +66,12 @@ func (h *Handlers) UploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, response.Success(0, "文件已存在", nil))
 		return
 	}
-	if err := h.minioClient.UploadFile(ctx, file, "chat", objectName, fileHeader.Size); err != nil {
+	if err := h.minioClient.UploadFile(ctx, file, objectName, fileHeader.Size); err != nil {
 		log.Logger.Error().Err(err).Msg("failed to upload file")
 		_ = ctx.Error(exception.ErrUploadFile)
 		return
 	}
-	if err := h.db.UploadFile(ctx, claims, fileHeader.Filename, utils.GetFileTypeEnum(fileType), md5Value, sha1Value); err != nil {
+	if err := h.db.UploadFile(ctx, claims, objectName, fileHeader.Filename, md5Value, sha1Value); err != nil {
 		log.Logger.Error().Err(err).Msg("failed to upload file")
 		_ = ctx.Error(exception.ErrUploadFile)
 		return
@@ -119,7 +119,7 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 		return
 	}
 	objectName := utils.GetFileType(strings.TrimPrefix(filepath.Ext(fileName), ".")) + "/" + fileDownload.Md5 + fileDownload.Sha1 + filepath.Ext(fileName)
-	if shortUrl, err := h.minioClient.GetFileSign(ctx, "chat", objectName); err != nil {
+	if shortUrl, err := h.minioClient.GetFileSign(ctx, objectName); err != nil {
 		_ = ctx.Error(exception.ErrFileUrl)
 		return
 	} else {

@@ -9,16 +9,16 @@ import (
 )
 
 type FileService interface {
-	UploadFile(ctx context.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error
+	UploadFile(ctx context.Context, claims *types.GIClaims, objectName, fileName, md5, sha1 string) error
 	CheckIsExist(ctx context.Context, md5, sha1 string) bool
 	GetShortUrl(ctx context.Context, request request.FileDownload) (string, string)
 }
 
-func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error {
+func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, objectName, fileName, md5, sha1 string) error {
 	return s.Transaction(ctx, func(ctx context.Context) error {
 		var file model.File
-		file.FileType = fileType
 		file.ObjectName = objectName
+		file.FileName = fileName
 		file.Owner = claims.UserId
 		file.Md5 = md5
 		file.Sha1 = sha1

@@ -22,6 +22,13 @@ func init() {
 			maxFileSize = int64(maxSize)
 		}
 	}
+	if bucket == "" {
+		if buckets := os.Getenv("MINIO_BUCKET_NAME"); buckets != "" {
+			bucket = buckets
+		} else {
+			bucket = defines.DEFAUT_BUCKETNAME
+		}
+	}
 }
 
 type MinIOStore struct {
@@ -32,6 +39,7 @@ var (
 	minIOStore  *MinIOStore
 	once        sync.Once
 	maxFileSize int64
+	bucket      string
 )
 
 // NewClient 创建并初始化一个新的 MinIO 客户端实例。
@@ -120,14 +128,14 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 // 返回值:
 //
 //	返回上传文件的 URL 和可能出现的错误。
-func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName, objectName string, fileSize int64) error {
+func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, objectName string, fileSize int64) error {
 	// 验证 fileSize 的合法性
 	if fileSize < 0 || fileSize > maxFileSize*1024*1024*1024 {
-		log.Logger.Error().Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("invalid file size")
+		log.Logger.Error().Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("invalid file size")
 		return fmt.Errorf("invalid file size: %d", fileSize)
 	}
 	// 创建Bucket
-	if err := s.CreateBucket(ctx, bucketName, ""); err != nil {
+	if err := s.CreateBucket(ctx, bucket, ""); err != nil {
 		return err
 	}
 
@@ -142,12 +150,12 @@ func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName,
 	}
 
 	// 执行上传操作
-	if _, err := s.PutObject(ctx, bucketName, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
+	if _, err := s.PutObject(ctx, bucket, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
 		if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
-			log.Logger.Error().Err(err).Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("context canceled or deadline exceeded")
+			log.Logger.Error().Err(err).Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("context canceled or deadline exceeded")
 			return ctx.Err()
 		}
-		log.Logger.Error().Err(err).Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("failed to upload file to MinIO")
+		log.Logger.Error().Err(err).Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("failed to upload file to MinIO")
 		return err
 	}
 
@@ -166,12 +174,12 @@ func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName,
 //
 //	string: 文件的预签名URL，允许在限定时间内访问文件
 //	error: 错误信息，如果生成预签名URL时发生错误，则返回该错误
-func (s *MinIOStore) GetFileSign(ctx context.Context, bucketName, objectName string) (string, error) {
+func (s *MinIOStore) GetFileSign(ctx context.Context, objectName string) (string, error) {
 	// 使用s.PresignedGetObject方法生成文件的预签名URL
 	// 它允许在定义的时间内（此处为1小时）访问指定的文件对象
-	if preSignedURL, err := s.PresignedGetObject(ctx, bucketName, objectName, defines.FILE_SHORT_SIGN*time.Hour, nil); err != nil {
+	if preSignedURL, err := s.PresignedGetObject(ctx, bucket, objectName, defines.FILE_SHORT_SIGN*time.Hour, nil); err != nil {
 		// 如果生成预签名URL时发生错误，则记录错误日志并返回错误
-		log.Logger.Error().Err(err).Msgf("failed to get file sign,%s/%s", bucketName, objectName)
+		log.Logger.Error().Err(err).Msgf("failed to get file sign,%s/%s", bucket, objectName)
 		return "", err
 	} else {
 		// 如果成功生成预签名URL，则返回URL字符串和nil错误

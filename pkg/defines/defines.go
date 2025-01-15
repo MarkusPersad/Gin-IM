@@ -12,4 +12,6 @@ const (
 	MESSAGE_SEND_TIMEOUT = 5
 	SYSTEM_MESSAGE       = "system"
 	FILE_SHORT_SIGN      = 24
+	DEFAUT_BUCKETNAME    = "default"
+	CHUNKS_BUCKET        = "chunks"
 )
