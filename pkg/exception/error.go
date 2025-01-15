@@ -13,6 +13,7 @@ var (
 	ErrAlreadyLogin = NewError(1010, "用户已登录")
 	ErrLoginTimeout = NewError(1011, "登录超时")
 	ErrUploadFile   = NewError(1012, "上传文件失败")
+	ErrFileUrl      = NewError(1013, "文件链接获取失败")
 )
 
 type PersonalError struct {

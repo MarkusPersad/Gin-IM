@@ -2,18 +2,19 @@ package database
 
 import (
 	"Gin-IM/internal/model"
+	"Gin-IM/pkg/request"
 	"Gin-IM/pkg/types"
 	"context"
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 type FileService interface {
-	UploadFile(ctx *gin.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error
-	CheckIsExist(ctx *gin.Context, md5, sha1 string) bool
+	UploadFile(ctx context.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error
+	CheckIsExist(ctx context.Context, md5, sha1 string) bool
+	GetShortUrl(ctx context.Context, request request.FileDownload) (string, string)
 }
 
-func (s *service) UploadFile(ctx *gin.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error {
+func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, objectName string, fileType int8, md5, sha1 string) error {
 	return s.Transaction(ctx, func(ctx context.Context) error {
 		var file model.File
 		file.FileType = fileType
@@ -29,9 +30,27 @@ func (s *service) UploadFile(ctx *gin.Context, claims *types.GIClaims, objectNam
 	})
 }
 
-func (s *service) CheckIsExist(ctx *gin.Context, md5, sha1 string) bool {
+func (s *service) CheckIsExist(ctx context.Context, md5, sha1 string) bool {
 	if err := s.GetDB(ctx).Model(&model.File{}).Where("md5 = ? and sha1 = ?", md5, sha1).First(&model.File{}).Error; err != nil {
 		return false
 	}
 	return true
+}
+
+func (s *service) GetShortUrl(ctx context.Context, request request.FileDownload) (string, string) {
+	var file model.File
+	err := s.Transaction(ctx, func(ctx context.Context) error {
+		if err := s.GetDB(ctx).Model(&model.File{}).
+			Where("md5 = ?", request.Md5).
+			Where("sha1 = ?", request.Sha1).
+			First(&file).Error; err != nil {
+			log.Logger.Error().Err(err).Msg("failed to get file")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return "", ""
+	}
+	return file.Md5 + file.Sha1, file.ObjectName
 }

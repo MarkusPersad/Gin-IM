@@ -17,15 +17,13 @@ import (
 )
 
 func init() {
-	once.Do(func() {
-		if maxFileSize == 0 {
-			if maxSize, err := strconv.Atoi(os.Getenv("MINIO_MAX_SIZE")); err != nil {
-				log.Logger.Error().Msg("minio max size error")
-			} else {
-				maxFileSize = int64(maxSize)
-			}
+	if maxFileSize == 0 {
+		if maxSize, err := strconv.Atoi(os.Getenv("MINIO_MAX_SIZE")); err != nil {
+			log.Logger.Error().Msg("minio max size error")
+		} else {
+			maxFileSize = int64(maxSize)
 		}
-	})
+	}
 }
 
 type MinIOStore struct {
@@ -69,7 +67,7 @@ func NewClient(useSSL bool) *MinIOStore {
 			minIOStore = &MinIOStore{
 				Client: client,
 			}
-			log.Info().Msgf("minio client init success ,endpoint:%s", minIOStore.EndpointURL().String())
+			log.Info().Msg("minio client init success")
 		}
 	})
 	// 返回初始化后的 minIOStore 实例。

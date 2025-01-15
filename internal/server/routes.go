@@ -70,6 +70,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		file := api.Group("/file")
 		{
 			file.POST("/upload", s.UploadFile)
+			file.POST("/download", s.GetShortUrl)
 		}
 	}
 	return r

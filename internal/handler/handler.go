@@ -13,9 +13,10 @@ type Handlers struct {
 }
 
 func NewHandler() *Handlers {
+	client := minio.NewClient(false)
 	return &Handlers{
 		db:          database.New(),
-		minioClient: minio.NewClient(false),
+		minioClient: client,
 	}
 }
 
