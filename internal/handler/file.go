@@ -66,7 +66,7 @@ func (h *Handlers) UploadFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, response.Success(0, "文件已存在", nil))
 		return
 	}
-	if _, err := h.minioClient.UploadFile(ctx, file, "chat", objectName, fileHeader.Size); err != nil {
+	if err := h.minioClient.UploadFile(ctx, file, "chat", objectName, fileHeader.Size); err != nil {
 		log.Logger.Error().Err(err).Msg("failed to upload file")
 		_ = ctx.Error(exception.ErrUploadFile)
 		return

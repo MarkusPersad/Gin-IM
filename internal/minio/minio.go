@@ -8,9 +8,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
 	"io"
-	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"sync"
 	"time"
@@ -105,30 +103,6 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 		log.Logger.Error().Err(err).Msg("minio create bucket error")
 		return err
 	}
-	// 定义公共读取权限策略，允许任何人获取桶中的对象。
-	policy := `{
-		"Version": "2012-10-17",
-		"Statement": [
-			{
-				"Sid": "PublicRead",
-				"Effect": "Allow",
-				"Principal": "*",
-				"Action": "s3:GetObject",
-				"Resource": "arn:aws:s3:::` + bucketName + `/*"
-			}
-		]
-	}`
-
-	// 为新创建的桶设置公共读取权限策略。
-	if err = s.SetBucketPolicy(ctx, bucketName, policy); err != nil {
-		// 如果设置策略时发生错误，尝试删除刚创建的桶以保持一致性。
-		log.Logger.Error().Err(err).Msg("minio set bucket policy error")
-		if err := s.RemoveBucket(ctx, bucketName); err != nil {
-			log.Logger.Error().Err(err).Msg("minio remove bucket error")
-			return err
-		}
-		return err
-	}
 
 	// 桶成功创建并设置策略，返回 nil 表示操作成功。
 	return nil
@@ -146,15 +120,15 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 // 返回值:
 //
 //	返回上传文件的 URL 和可能出现的错误。
-func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName, objectName string, fileSize int64) (string, error) {
+func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName, objectName string, fileSize int64) error {
 	// 验证 fileSize 的合法性
 	if fileSize < 0 || fileSize > maxFileSize*1024*1024*1024 {
 		log.Logger.Error().Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("invalid file size")
-		return "", fmt.Errorf("invalid file size: %d", fileSize)
+		return fmt.Errorf("invalid file size: %d", fileSize)
 	}
 	// 创建Bucket
 	if err := s.CreateBucket(ctx, bucketName, ""); err != nil {
-		return "", err
+		return err
 	}
 
 	// 尝试将 file 转换为 io.Closer
@@ -171,21 +145,13 @@ func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, bucketName,
 	if _, err := s.PutObject(ctx, bucketName, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
 		if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
 			log.Logger.Error().Err(err).Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("context canceled or deadline exceeded")
-			return "", ctx.Err()
+			return ctx.Err()
 		}
 		log.Logger.Error().Err(err).Str("bucketName", bucketName).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("failed to upload file to MinIO")
-		return "", err
+		return err
 	}
 
-	// 构建安全的 URL
-	u, err := url.Parse(s.EndpointURL().String())
-	if err != nil {
-		log.Logger.Error().Err(err).Str("endpointURL", s.EndpointURL().String()).Msg("failed to parse endpoint URL")
-		return "", err
-	}
-	u.Path = path.Join(u.Path, bucketName, objectName)
-
-	return u.String(), nil
+	return nil
 }
 
 // GetFileSign 获取文件的预签名URL
