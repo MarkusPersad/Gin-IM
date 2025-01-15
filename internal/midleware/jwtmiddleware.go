@@ -3,6 +3,7 @@ package midleware
 import (
 	"Gin-IM/pkg/token"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // JwtMiddleware 返回一个基于JWT的认证中间件，它可以根据条件跳过认证过程。
@@ -17,7 +18,8 @@ func JwtMiddleware(skipper func(c *gin.Context) bool) gin.HandlerFunc {
 
 		// 进行JWT认证，如果认证失败，则终止请求处理并返回错误信息。
 		if err := token.TokenValid(ctx); err != nil {
-			err = ctx.Error(err)
+			_ = ctx.Error(err)
+			log.Logger.Error().Err(err).Msg("Jwt Error")
 			ctx.Abort()
 			return
 		}
