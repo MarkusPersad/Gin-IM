@@ -4,25 +4,16 @@ import (
 	"Gin-IM/pkg/defines"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
 
 func init() {
-	if maxFileSize == 0 {
-		if maxSize, err := strconv.Atoi(os.Getenv("MINIO_MAX_SIZE")); err != nil {
-			log.Logger.Error().Msg("minio max size error")
-		} else {
-			maxFileSize = int64(maxSize)
-		}
-	}
 	if bucket == "" {
 		if buckets := os.Getenv("MINIO_BUCKET_NAME"); buckets != "" {
 			bucket = buckets
@@ -34,13 +25,13 @@ func init() {
 
 type MinIOStore struct {
 	*minio.Client
+	*minio.Core
 }
 
 var (
-	minIOStore  *MinIOStore
-	once        sync.Once
-	maxFileSize int64
-	bucket      string
+	minIOStore *MinIOStore
+	once       sync.Once
+	bucket     string
 )
 
 // NewClient 创建并初始化一个新的 MinIO 客户端实例。
@@ -73,6 +64,7 @@ func NewClient(useSSL bool) *MinIOStore {
 			// 如果创建成功，则初始化 minIOStore，并记录成功日志。
 			minIOStore = &MinIOStore{
 				Client: client,
+				Core:   &minio.Core{Client: client},
 			}
 			log.Info().Msg("minio client init success")
 		}
@@ -130,11 +122,6 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 //
 //	返回上传文件的 URL 和可能出现的错误。
 func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, objectName string, fileSize int64) error {
-	// 验证 fileSize 的合法性
-	if fileSize < 0 || fileSize > maxFileSize*1024*1024*1024 {
-		log.Logger.Error().Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("invalid file size")
-		return fmt.Errorf("invalid file size: %d", fileSize)
-	}
 	// 创建Bucket
 	if err := s.CreateBucket(ctx, bucket, ""); err != nil {
 		return err
@@ -151,7 +138,7 @@ func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, objectName 
 	}
 
 	// 执行上传操作
-	if _, err := s.PutObject(ctx, bucket, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
+	if _, err := s.Client.PutObject(ctx, bucket, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
 		if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
 			log.Logger.Error().Err(err).Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("context canceled or deadline exceeded")
 			return ctx.Err()

@@ -13,5 +13,5 @@ const (
 	SYSTEM_MESSAGE       = "system"
 	FILE_SHORT_SIGN      = 24
 	DEFAUT_BUCKETNAME    = "default"
-	CHUNKS_BUCKET        = "chunks"
+	CHUNK_NUM            = 30
 )
