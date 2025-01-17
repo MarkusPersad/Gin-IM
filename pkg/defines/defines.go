@@ -14,4 +14,6 @@ const (
 	FILE_SHORT_SIGN      = 24
 	DEFAUT_BUCKETNAME    = "default"
 	CHUNK_NUM            = 30
+	UPLOAD_ID            = "uploadId:"
+	SINGLE_UPLOAD_ID     = "Single"
 )

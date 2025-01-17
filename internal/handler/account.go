@@ -47,7 +47,7 @@ func (h *Handlers) Register(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&register); err != nil {
+	if err := validates.Validate(ctx, &register); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -82,7 +82,7 @@ func (h *Handlers) Login(ctx *gin.Context) {
 	}
 
 	// 验证登录信息的合法性。
-	if err := validates.Validate(&login); err != nil {
+	if err := validates.Validate(ctx, &login); err != nil {
 		// 如果验证失败，返回错误信息并结束函数执行。
 		_ = ctx.Error(err)
 		return
@@ -199,7 +199,7 @@ func (h *Handlers) Search(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&userSearch); err != nil {
+	if err := validates.Validate(ctx, &userSearch); err != nil {
 		_ = ctx.Error(err)
 		return
 	}

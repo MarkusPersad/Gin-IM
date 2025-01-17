@@ -2,7 +2,6 @@ package minio
 
 import (
 	"Gin-IM/pkg/defines"
-	"Gin-IM/pkg/exception"
 	"Gin-IM/pkg/types"
 	"context"
 	"github.com/minio/minio-go/v7"
@@ -28,12 +27,6 @@ func (s *MinIOStore) InitMutiparts(ctx context.Context, upload types.UploadInfo)
 	// 初始化uploadUrls变量，用于存储上传ID和预签名URL。
 	var uploadUrls types.UploadUrls
 
-	// 检查分片大小和分片数量是否有效，如果无效则记录错误日志并返回错误。
-	if upload.ChunkSize <= 0 || upload.ChunkNumber <= 0 {
-		log.Logger.Error().Str("objectName", upload.ObjectName).Msg("invalid chunk size or chunk number")
-		return nil, exception.ErrBadRequest
-	}
-
 	// 处理单个分片上传的情况。
 	if upload.ChunkSize == 1 {
 		// 生成单个分片上传的预签名URL。
@@ -41,6 +34,7 @@ func (s *MinIOStore) InitMutiparts(ctx context.Context, upload types.UploadInfo)
 			log.Logger.Error().Err(err).Msg("failed to get single upload url")
 			return nil, err
 		} else {
+			uploadUrls.UploadId = defines.SINGLE_UPLOAD_ID
 			uploadUrls.Urls = append(uploadUrls.Urls, presignedUrl.String())
 			return &uploadUrls, nil
 		}
@@ -163,4 +157,24 @@ func (s *MinIOStore) MergeMutipartsUpload(ctx context.Context, uploadId, objectN
 
 	// 如果一切顺利，返回nil表示操作成功。
 	return nil
+}
+
+// StatusObject 获取指定对象的状态信息。
+//
+// 该方法主要用于获取存储在MinIO中的对象的元数据信息，如对象的大小、最后修改时间等。
+// 它通过调用MinIO的StatObject方法来实现。
+//
+// 参数:
+//   - ctx: 上下文，用于传递请求的上下文信息，如超时设置。
+//   - objectName: 对象名称，表示需要获取状态信息的对象在MinIO中的唯一标识。
+//
+// 返回值:
+//   - minio.ObjectInfo: 包含对象状态信息的结构体，如对象的大小、最后修改时间等。
+//   - error: 如果在获取对象状态信息过程中发生错误，则返回该错误。
+func (s *MinIOStore) StatusObject(ctx context.Context, objectName string) (minio.ObjectInfo, error) {
+	return s.StatObject(ctx, bucket, objectName, minio.StatObjectOptions{})
+}
+
+func (s *MinIOStore) AbortUpload(ctx context.Context, objectName, uploadId string) error {
+	return s.AbortMultipartUpload(ctx, bucket, objectName, uploadId)
 }

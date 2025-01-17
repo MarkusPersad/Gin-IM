@@ -3,6 +3,7 @@ package validates
 import (
 	"Gin-IM/pkg/defines"
 	"Gin-IM/pkg/exception"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
@@ -47,8 +48,8 @@ func processError(data interface{}, err error) string {
 	return ""
 }
 
-func Validate(data interface{}) error {
-	if errs := newValidator().Struct(data); errs != nil {
+func Validate(ctx context.Context, data interface{}) error {
+	if errs := newValidator().StructCtx(ctx, data); errs != nil {
 		return exception.NewError(1005, processError(data, errs))
 	}
 	return nil

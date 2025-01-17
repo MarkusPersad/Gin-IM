@@ -7,7 +7,6 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
-	"io"
 	"os"
 	"sync"
 	"time"
@@ -106,47 +105,6 @@ func (s *MinIOStore) CreateBucket(ctx context.Context, bucketName, bucketLocatio
 	}
 
 	// 桶成功创建并设置策略，返回 nil 表示操作成功。
-	return nil
-}
-
-// UploadFile 上传文件到 MinIO 存储系统。
-// 参数:
-//
-//	ctx: 上下文，用于传递请求的上下文信息。
-//	file: 要上传的文件，作为 io.Reader 类型。
-//	bucketName: 存储桶名称。
-//	objectName: 对象名称，即文件在存储桶中的路径和名称。
-//	fileSize: 文件大小，用于验证文件的合法性。
-//
-// 返回值:
-//
-//	返回上传文件的 URL 和可能出现的错误。
-func (s *MinIOStore) UploadFile(ctx context.Context, file io.Reader, objectName string, fileSize int64) error {
-	// 创建Bucket
-	if err := s.CreateBucket(ctx, bucket, ""); err != nil {
-		return err
-	}
-
-	// 尝试将 file 转换为 io.Closer
-	closer, ok := file.(io.Closer)
-	if ok {
-		defer func() {
-			if err := closer.Close(); err != nil {
-				log.Logger.Warn().Err(err).Msg("failed to close file")
-			}
-		}()
-	}
-
-	// 执行上传操作
-	if _, err := s.Client.PutObject(ctx, bucket, objectName, file, fileSize, minio.PutObjectOptions{}); err != nil {
-		if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
-			log.Logger.Error().Err(err).Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("context canceled or deadline exceeded")
-			return ctx.Err()
-		}
-		log.Logger.Error().Err(err).Str("bucketName", bucket).Str("objectName", objectName).Int64("fileSize", fileSize).Msg("failed to upload file to MinIO")
-		return err
-	}
-
 	return nil
 }
 

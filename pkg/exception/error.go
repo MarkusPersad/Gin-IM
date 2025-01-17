@@ -15,7 +15,9 @@ var (
 	ErrUploadFile   = NewError(1012, "上传文件失败")
 	ErrFileUrl      = NewError(1013, "文件链接获取失败")
 	//ErrPermissionDenied = NewError(1014, "权限不足")
-	ErrFileDelete = NewError(1015, "文件删除失败")
+	ErrFileDelete    = NewError(1015, "文件删除失败")
+	ErrFileUploading = NewError(1016, "文件还还不能合并")
+	ErrFileRecovery  = NewError(1017, "文件未能恢复")
 )
 
 type PersonalError struct {

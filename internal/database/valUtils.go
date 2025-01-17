@@ -136,7 +136,7 @@ func (s *service) AddToList(ctx context.Context, key string, element string) err
 //
 //	字符串切片，包含键key对应的列表值。
 //	如果键不存在或获取值时发生错误，则返回nil。
-func (s service) GetList(ctx context.Context, key string) []string {
+func (s *service) GetList(ctx context.Context, key string) []string {
 	// 执行缓存获取操作，使用Lrange命令获取列表的全部元素。
 	result := s.valClient.Do(ctx, s.valClient.B().Lrange().Key(key).Start(0).Stop(-1).Build())
 

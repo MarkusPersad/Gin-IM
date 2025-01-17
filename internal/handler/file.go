@@ -6,27 +6,21 @@ import (
 	"Gin-IM/pkg/request"
 	"Gin-IM/pkg/response"
 	"Gin-IM/pkg/token"
-	"Gin-IM/pkg/utils"
 	"Gin-IM/pkg/validates"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
-	"path/filepath"
-	"strings"
 )
 
 // UploadFile godoc
 // @Summary 上传文件
-// @Description 用户上传文件到服务器，并存储在 MinIO 中
+// @Description 上传文件
 // @Tags 文件管理
-// @Accept multipart/form-data
+// @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer Token令牌"
-// @Param file formData file true "要上传的文件"
-// @Param md5 formData string true "文件的 MD5 值"
-// @Param sha1 formData string true "文件的 SHA1 值"
+// @Param fileUpload body request.FileUpload true "文件上传信息"
 // @Success 200 {object} response.Response "成功"
-// @Failure 200 {object} response.Response "失败受到"
+// @Failure 200 {object} response.Response "失败"
 // @Router /api/file/upload [post]
 func (h *Handlers) UploadFile(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
@@ -42,31 +36,20 @@ func (h *Handlers) UploadFile(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
-	file, fileHeader, err := ctx.Request.FormFile("file")
-	if err != nil {
-		log.Logger.Error().Err(err).Msg("failed to get file")
+	var upload request.FileUpload
+	if err := ctx.BindJSON(&upload); err != nil {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	md5Value := ctx.PostForm("md5")
-	if md5Value == "" {
-		log.Logger.Error().Msg("md5 is empty")
-		_ = ctx.Error(exception.ErrBadRequest)
-		return
-	}
-	sha1Value := ctx.PostForm("sha1")
-	if sha1Value == "" {
-		log.Logger.Error().Msg("sha1 is empty")
-		_ = ctx.Error(exception.ErrBadRequest)
-		return
-	}
-	fileType := utils.GetFileType(strings.TrimPrefix(filepath.Ext(fileHeader.Filename), "."))
-	objectName := fileType + "/" + md5Value + sha1Value + filepath.Ext(fileHeader.Filename)
-	if err := h.db.UploadFile(ctx, claims, file, objectName, fileHeader.Filename, md5Value, sha1Value, fileHeader.Size); err != nil {
+	if err := validates.Validate(ctx, &upload); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, response.Success(0, "上传成功", fileHeader.Filename))
+	if uploadUrl, err := h.db.UploadFile(ctx, claims, upload); err != nil {
+		_ = ctx.Error(exception.ErrUploadFile)
+	} else {
+		ctx.JSON(http.StatusOK, response.Success(0, "上传成功", uploadUrl))
+	}
 }
 
 // GetShortUrl godoc
@@ -99,11 +82,11 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&fileDownload); err != nil {
+	if err := validates.Validate(ctx, &fileDownload); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	if url := h.db.GetShortURL(ctx, fileDownload); url == "" {
+	if url := h.db.GetShortURL(ctx, claims, fileDownload); url == "" {
 		_ = ctx.Error(exception.ErrFileUrl)
 		return
 	} else {
@@ -122,7 +105,7 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 // @Success 200 {object} response.Response "成功"
 // @Failure 200 {object} response.Response "失败"
 // @Router /api/file/delete [post]
-func (h Handlers) DeleteFile(ctx *gin.Context) {
+func (h *Handlers) DeleteFile(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -136,18 +119,99 @@ func (h Handlers) DeleteFile(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
-	var fileDelete request.FileDelete
-	if err := ctx.BindJSON(&fileDelete); err != nil {
+	var fileDeletes request.FileDeletes
+	if err := ctx.BindJSON(&fileDeletes); err != nil {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&fileDelete); err != nil {
+	if err := validates.Validate(ctx, &fileDeletes); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	if err := h.db.DeleteFile(ctx, claims, fileDelete); err != nil {
+	if err := h.db.DeleteFile(ctx, claims, fileDeletes.Deletes); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	ctx.JSON(http.StatusOK, response.Success(0, "删除成功", nil))
+}
+
+func (h *Handlers) MergeFile(ctx *gin.Context) {
+	var merge request.FileMerge
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	if err := ctx.BindJSON(&merge); err != nil {
+		_ = ctx.Error(exception.ErrBadRequest)
+		return
+	}
+	if err := validates.Validate(ctx, &merge); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err := h.db.MergeFile(ctx, claims, merge); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "合并成功", nil))
+}
+
+func (h *Handlers) GetTrash(ctx *gin.Context) {
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	if recoveries := h.db.GetFileTrash(ctx, claims); len(recoveries) == 0 {
+		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", nil))
+	} else {
+		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", recoveries))
+	}
+}
+
+func (h *Handlers) RecoveryFile(ctx *gin.Context) {
+	var recoveries request.FileRecoveryList
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	if err := ctx.BindJSON(&recoveries); err != nil {
+		_ = ctx.Error(exception.ErrBadRequest)
+		return
+	}
+	if err := validates.Validate(ctx, &recoveries); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err := h.db.Recovery(ctx, claims, recoveries.Recoveries); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "恢复成功", nil))
 }

@@ -41,7 +41,7 @@ func (h *Handlers) AddFriend(ctx *gin.Context) {
 		err = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&friendRequest); err != nil {
+	if err := validates.Validate(ctx, &friendRequest); err != nil {
 		err = ctx.Error(err)
 		return
 	}
@@ -115,7 +115,7 @@ func (h *Handlers) AddToBlackList(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&friendRequest); err != nil {
+	if err := validates.Validate(ctx, &friendRequest); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -188,7 +188,7 @@ func (h *Handlers) CancelBlack(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&friendRequest); err != nil {
+	if err := validates.Validate(ctx, &friendRequest); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -229,7 +229,7 @@ func (h *Handlers) DeleteFriend(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&friendRequest); err != nil {
+	if err := validates.Validate(ctx, &friendRequest); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -270,7 +270,7 @@ func (h *Handlers) AgreeFriendRequest(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrBadRequest)
 		return
 	}
-	if err := validates.Validate(&friendRequest); err != nil {
+	if err := validates.Validate(ctx, &friendRequest); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
