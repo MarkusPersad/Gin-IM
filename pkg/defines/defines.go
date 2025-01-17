@@ -16,4 +16,6 @@ const (
 	CHUNK_NUM            = 30
 	UPLOAD_ID            = "uploadId:"
 	SINGLE_UPLOAD_ID     = "Single"
+	MIN_CHUNK_SIZE       = 5 * 1024 * 1024
+	COMPLETED_PARTS      = "completedParts:"
 )

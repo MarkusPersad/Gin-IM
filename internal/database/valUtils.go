@@ -107,24 +107,6 @@ func (s *service) SetListAndTime(ctx context.Context, key string, list []string,
 	}
 }
 
-// AddToList 将元素添加到列表中。
-// 如果列表不存在，将创建一个列表并添加元素。
-// 参数:
-//
-//	ctx - 上下文，用于传递请求范围的 deadline、取消信号等。
-//	key - 列表的键。
-//	element - 要添加到列表的元素。
-//
-// 返回值:
-//
-//	如果操作成功，返回 nil；否则返回错误。
-func (s *service) AddToList(ctx context.Context, key string, element string) error {
-	// 使用 valClient 执行 Rpushx 操作，将元素添加到列表的末尾。
-	// Rpushx 命令仅在列表已存在时才执行添加操作。
-	// 如果列表不存在，命令将失败并不进行任何操作。
-	return s.valClient.Do(ctx, s.valClient.B().Rpushx().Key(key).Element(element).Build()).Error()
-}
-
 // GetList 获取给定键对应的列表值。
 // 该方法从valClient中获取与键key相关联的列表值，并将其作为字符串切片返回。
 // 参数:

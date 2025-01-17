@@ -2,6 +2,7 @@ package minio
 
 import (
 	"Gin-IM/pkg/defines"
+	"Gin-IM/pkg/exception"
 	"Gin-IM/pkg/types"
 	"context"
 	"github.com/minio/minio-go/v7"
@@ -11,69 +12,84 @@ import (
 	"time"
 )
 
-// InitMutiparts 初始化分片上传的过程。
-// 该方法根据上传信息生成上传ID和一系列预签名的上传URL，供客户端使用。
+// InitMutiparts 初始化多部分上传
+// 该函数负责为给定的上传信息生成上传URLs
 // 参数:
-//   - ctx: 上下文，用于传递请求范围的数据和控制超时。
-//   - upload: 包含上传信息的结构体，如分片大小、分片数量、对象名称等。
+//
+//	ctx - 上下文，用于传递请求范围的 deadline、取消信号等
+//	upload - 包含上传信息的结构体，如桶名、对象名、分块数量等
 //
 // 返回值:
-//   - *types.UploadUrls: 包含上传ID和预签名URL的结构体指针。
-//   - error: 在操作过程中可能遇到的错误。
+//
+//	*types.UploadUrls - 包含上传URLs和上传ID的结构体指针
+//	error - 如果操作失败，返回错误
 func (s *MinIOStore) InitMutiparts(ctx context.Context, upload types.UploadInfo) (*types.UploadUrls, error) {
+	// 初始化上传URLs结构体
+	var uploadUrls = &types.UploadUrls{}
+
+	// 确保桶存在，如果不存在则创建
 	if err := s.CreateBucket(ctx, bucket, ""); err != nil {
+		log.Logger.Error().Err(err).Msg("failed to create bucket")
 		return nil, err
 	}
-	// 初始化uploadUrls变量，用于存储上传ID和预签名URL。
-	var uploadUrls types.UploadUrls
 
-	// 处理单个分片上传的情况。
-	if upload.ChunkSize == 1 {
-		// 生成单个分片上传的预签名URL。
-		if presignedUrl, err := s.PresignedPutObject(ctx, bucket, upload.ObjectName, defines.FILE_SHORT_SIGN*time.Hour); err != nil {
-			log.Logger.Error().Err(err).Msg("failed to get single upload url")
+	// 验证分块大小是否符合要求，分块数量和分块大小需要满足特定条件
+	if upload.ChunkNumber <= 0 || upload.ChunkSize <= defines.MIN_CHUNK_SIZE {
+		log.Logger.Error().Msg("ChunkSize Must greater 5 MB")
+		return nil, exception.ErrBadRequest
+	}
+
+	// 处理单块上传的情况
+	if upload.ChunkNumber == 1 {
+		if presignedURL, err := s.PresignedPutObject(ctx, bucket, upload.ObjectName, defines.FILE_SHORT_SIGN*time.Hour); err != nil {
+			log.Logger.Error().Err(err).Msg("failed to get file sign")
 			return nil, err
 		} else {
 			uploadUrls.UploadId = defines.SINGLE_UPLOAD_ID
-			uploadUrls.Urls = append(uploadUrls.Urls, presignedUrl.String())
-			return &uploadUrls, nil
+			uploadUrls.Urls = append(uploadUrls.Urls, presignedURL.String())
+			return uploadUrls, nil
 		}
 	}
 
-	// 检查上传ID是否为空，如果为空则发起新的分片上传请求。
+	// 处理多块上传的情况，首先获取或生成上传ID
 	if upload.UploadId == "" {
-		// 生成新的上传ID。
-		if uploadId, err := s.NewMultipartUpload(ctx, bucket, upload.ObjectName, minio.PutObjectOptions{
-			ContentType: upload.ContentType,
-			PartSize:    upload.ChunkSize,
-		}); err != nil {
-			log.Logger.Error().Err(err).Str("objectName", upload.ObjectName).Msg("failed to create multipart upload")
+		uploadId, err := s.NewMultipartUpload(ctx, bucket, upload.ObjectName, minio.PutObjectOptions{
+			PartSize: upload.ChunkSize,
+		})
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("failed to new multipart upload")
 			return nil, err
-		} else {
-			upload.UploadId = uploadId
 		}
-
-		// 设置uploadUrls的UploadId字段为新生成的上传ID。
+		uploadUrls.UploadId = uploadId
+	} else {
 		uploadUrls.UploadId = upload.UploadId
+	}
 
-		// 初始化urlValues变量，用于存储查询参数。
-		urlValues := url.Values{}
-		urlValues.Set("uploadId", upload.UploadId)
-
-		// 循环生成每个分片的预签名URL，并添加到uploadUrls的Urls列表中。
-		for num := 1; num <= upload.ChunkNumber; num++ {
-			urlValues.Set("partNumber", strconv.Itoa(num))
-			if presignedUrl, err := s.Presign(ctx, "PUT", bucket, upload.ObjectName, defines.FILE_SHORT_SIGN*time.Hour, urlValues); err != nil {
-				log.Logger.Error().Err(err).Msg("failed to get multipart upload url")
-				return nil, err
-			} else {
-				uploadUrls.Urls = append(uploadUrls.Urls, presignedUrl.String())
+	// 获取已上传的分块信息，并标记为已完成
+	if len(upload.Completed) == 0 {
+		if objectParts, err := s.getListParts(ctx, upload.ObjectName, uploadUrls.UploadId); err == nil && len(objectParts) != 0 {
+			for _, part := range objectParts {
+				uploadUrls.Completed = append(uploadUrls.Completed, strconv.Itoa(part.PartNumber))
 			}
 		}
+	} else {
+		uploadUrls.Completed = upload.Completed
+	}
+	// 为每个分块生成预签名URL
+	urlValues := url.Values{}
+	urlValues.Set("uploadId", uploadUrls.UploadId)
+	for num := 1; num <= upload.ChunkNumber; num++ {
+		urlValues.Set("partNumber", strconv.Itoa(num))
+		if presignedURL, err := s.Presign(ctx, "PUT", bucket, upload.ObjectName, defines.FILE_SHORT_SIGN*time.Hour, urlValues); err != nil {
+			log.Logger.Error().Err(err).Msg("failed to get file sign")
+			return nil, err
+		} else {
+			uploadUrls.Urls = append(uploadUrls.Urls, presignedURL.String())
+		}
 	}
 
-	// 返回包含上传ID和预签名URL的结构体指针。
-	return &uploadUrls, nil
+	// 返回包含所有上传URLs和上传ID的结构体
+	return uploadUrls, nil
 }
 
 // getListParts 获取对象的分片编号列表。

@@ -75,6 +75,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			file.POST("/merge", s.MergeFile)
 			file.GET("/trash", s.GetTrash)
 			file.POST("/recovery", s.RecoveryFile)
+			file.POST("/pushparts", s.PushPartsInfo)
 		}
 	}
 	return r

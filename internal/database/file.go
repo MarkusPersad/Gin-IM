@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"path/filepath"
+	"strings"
 )
 
 type FileService interface {
@@ -22,46 +23,51 @@ type FileService interface {
 	MergeFile(ctx context.Context, claims *types.GIClaims, merge request.FileMerge) error
 	GetFileTrash(ctx context.Context, claims *types.GIClaims) []request.FileRecovery
 	Recovery(ctx context.Context, claims *types.GIClaims, recoveries []request.FileRecovery) error
+	PushPartsInfo(ctx context.Context, parts request.PartInfo) error
 }
 
-// UploadFile 上传文件服务，处理文件上传的各个步骤
+// UploadFile 上传文件服务。该函数处理文件上传的请求，根据文件信息生成对象名，
+// 并通过事务处理方式初始化上传过程，包括检查文件是否存在、获取上传ID、生成上传URL等。
 // 参数:
 //
-//	ctx - 上下文，用于传递请求范围的数据
-//	claims - 用户声明，包含用户相关信息
-//	upload - 文件上传请求，包含文件上传的必要信息
+//	ctx - 上下文，用于传递请求范围的数据和控制超时。
+//	claims - 用户声明，包含用户相关信息。
+//	upload - 文件上传请求，包含文件信息。
 //
 // 返回值:
 //
-//	*types.UploadUrls - 上传文件的URL信息
-//	error - 错误信息，如果发生错误则返回
+//	*types.UploadUrls - 包含上传URL和上传ID的信息，如果上传初始化成功。
+//	error - 错误信息，如果上传初始化过程中发生错误。
 func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, upload request.FileUpload) (*types.UploadUrls, error) {
 	var uploadUrls *types.UploadUrls
 
-	// 使用事务确保数据一致性
+	// 使用事务处理上传过程，确保数据一致性。
 	err := s.Transaction(ctx, func(ctx context.Context) error {
-		// 构造对象名称，用于在存储系统中唯一标识文件
+		// 构造对象名，基于文件类型、MD5、SHA1和文件扩展名。
 		objectName := utils.GetFileType(filepath.Ext(upload.FileName)) + "/" + upload.Md5 + upload.Sha1 + filepath.Ext(upload.FileName)
 
-		// 初始化上传信息结构体
+		// 初始化上传信息。
 		uploadInfo := types.UploadInfo{
-			ContentType: filepath.Ext(upload.FileName),
 			ObjectName:  objectName,
 			ChunkSize:   upload.ChunkSize,
 			ChunkNumber: upload.ChunkNumber,
 		}
 
-		// 检查文件是否已经存在
+		// 从缓存中获取上传ID和已完成的分片列表。
+		uploadInfo.UploadId = s.GetValue(ctx, defines.UPLOAD_ID+objectName)
+		uploadInfo.Completed = s.GetList(ctx, defines.COMPLETED_PARTS+uploadInfo.UploadId)
+
+		// 检查文件是否已存在，如果存在，则更新数据库并结束上传初始化过程。
 		if file, isExist := s.CheckIsExist(ctx, upload.Md5, upload.Sha1); isExist {
-			// 如果文件已存在，更新数据库中的文件状态为已上传
 			if err := s.UploadFileToDB(ctx, claims, file.UploadId, objectName, file.FileName, file.Md5, file.Sha1, enums.FILEUPLOADED); err != nil {
 				return err
+			} else {
+				return nil
 			}
 		}
 
-		// 检查存储系统中是否已有该文件
+		// 检查MinIO中是否已存在该对象，如果存在，则更新数据库并结束上传初始化过程。
 		if _, err := s.minClient.StatusObject(ctx, objectName); err == nil {
-			// 如果文件已在存储系统中，更新数据库中的文件状态为已上传
 			if err := s.UploadFileToDB(ctx, claims, uploadInfo.UploadId, objectName, upload.FileName, upload.Md5, upload.Sha1, enums.FILEUPLOADED); err != nil {
 				return err
 			} else {
@@ -69,30 +75,34 @@ func (s *service) UploadFile(ctx context.Context, claims *types.GIClaims, upload
 			}
 		}
 
-		// 生成上传ID
-		uploadInfo.UploadId = s.GetValue(ctx, defines.UPLOAD_ID+objectName)
-		// 初始化分块上传
+		// 初始化分片上传，获取上传URL。
 		uploadUrl, err := s.minClient.InitMutiparts(ctx, uploadInfo)
 		if err != nil {
 			return err
 		} else {
-			// 设置上传ID到缓存
+			// 设置上传ID到缓存，以便后续使用。
 			if s.SetAndTime(ctx, defines.UPLOAD_ID+objectName, uploadUrl.UploadId, defines.FILE_SHORT_SIGN*60*60) != nil {
 				log.Logger.Error().Err(err).Msg("设置上传ID失败")
 				return err
 			}
 		}
-		// 更新数据库中的文件上传信息
+
+		// 更新数据库，记录上传开始状态。
 		if err := s.UploadFileToDB(ctx, claims, uploadUrl.UploadId, objectName, upload.FileName, upload.Md5, upload.Sha1, enums.FILEUPLOADING); err != nil {
 			return err
 		}
-		// 保存上传URL信息
+
+		// 保存上传URL，供外部使用。
 		uploadUrls = uploadUrl
 		return nil
 	})
+
+	// 如果事务处理过程中发生错误，返回错误信息。
 	if err != nil {
 		return nil, err
 	}
+
+	// 返回上传URL信息。
 	return uploadUrls, nil
 }
 
@@ -304,7 +314,7 @@ func (s *service) MergeFile(ctx context.Context, claims *types.GIClaims, merge r
 		}
 
 		// 删除缓存中的上传ID。
-		if err := s.DelValue(ctx, defines.UPLOAD_ID+objectName); err != nil {
+		if err := s.DelValue(ctx, defines.UPLOAD_ID+objectName, defines.COMPLETED_PARTS+uploadId); err != nil {
 			log.Logger.Error().Err(err).Msg("failed to del value")
 			return err
 		}
@@ -318,7 +328,9 @@ func (s *service) GetFileTrash(ctx context.Context, claims *types.GIClaims) []re
 		if err := s.GetDB(ctx).Unscoped().Model(&model.File{}).
 			Select("md5,sha1,filename").
 			Where("owner = ?", claims.UserId).
-			Where("deleted_at IS NOT NULL").Scan(&files).Error; err != nil {
+			Where("status = ?", enums.FILEUPLOADED).
+			Where("deleted_at IS NOT NULL").
+			Scan(&files).Error; err != nil {
 			log.Logger.Error().Err(err).Msg("failed to get file")
 			return exception.ErrNotFound
 		}
@@ -347,4 +359,30 @@ func (s *service) Recovery(ctx context.Context, claims *types.GIClaims, recoveri
 		}
 		return nil
 	})
+}
+
+// PushPartsInfo 接收并处理分片上传的信息。
+// 该方法根据提供的parts信息，将分片编号存储，并设置其过期时间。
+// 主要用于跟踪和管理大文件上传过程中的分片信息。
+// 参数:
+//
+//	ctx - 上下文，用于传递请求范围的 deadline、取消信号等。
+//	parts - 包含分片上传编号和其他信息的请求对象。
+//
+// 返回值:
+//
+//	如果操作成功，则返回nil；如果操作失败，则返回错误。
+func (s *service) PushPartsInfo(ctx context.Context, parts request.PartInfo) error {
+	// 将传入的分片编号字符串按逗号分割，转换为字符串切片。
+	uploadParts := strings.Split(parts.PartNums, ",")
+
+	// 调用SetListAndTime方法，设置已完成分片的列表和过期时间。
+	// 如果操作失败，则记录错误日志并返回错误。
+	if err := s.SetListAndTime(ctx, defines.COMPLETED_PARTS+parts.UploadId, uploadParts, 10*60); err != nil {
+		log.Logger.Error().Err(err).Msg("failed to push parts info")
+		return err
+	}
+
+	// 如果一切顺利，返回nil表示操作成功。
+	return nil
 }

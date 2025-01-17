@@ -5,5 +5,5 @@ type UploadInfo struct {
 	ObjectName  string
 	ChunkSize   uint64
 	ChunkNumber int
-	ContentType string
+	Completed   []string
 }

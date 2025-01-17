@@ -47,6 +47,7 @@ func (h *Handlers) UploadFile(ctx *gin.Context) {
 	}
 	if uploadUrl, err := h.db.UploadFile(ctx, claims, upload); err != nil {
 		_ = ctx.Error(exception.ErrUploadFile)
+		return
 	} else {
 		ctx.JSON(http.StatusOK, response.Success(0, "上传成功", uploadUrl))
 	}
@@ -101,7 +102,7 @@ func (h *Handlers) GetShortUrl(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer Token令牌"
-// @Param fileDelete body request.FileDelete true "文件删除信息"
+// @Param fileDeletes body request.FileDeletes true "文件删除信息"
 // @Success 200 {object} response.Response "成功"
 // @Failure 200 {object} response.Response "失败"
 // @Router /api/file/delete [post]
@@ -135,6 +136,17 @@ func (h *Handlers) DeleteFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response.Success(0, "删除成功", nil))
 }
 
+// MergeFile godoc
+// @Summary 合并文件
+// @Description 合并文件
+// @Tags 文件管理
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token令牌"
+// @Param merge body request.FileMerge true "文件合并信息"
+// @Success 200 {object} response.Response "成功"
+// @Failure 200 {object} response.Response "失败"
+// @Router /api/file/merge [post]
 func (h *Handlers) MergeFile(ctx *gin.Context) {
 	var merge request.FileMerge
 	claims, err := token.ExtractClaims(ctx)
@@ -165,6 +177,16 @@ func (h *Handlers) MergeFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response.Success(0, "合并成功", nil))
 }
 
+// GetTrash godoc
+// @Summary 获取回收站文件列表
+// @Description 获取回收站文件列表
+// @Tags 文件管理
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token令牌"
+// @Success 200 {object} response.Response "成功"
+// @Failure 200 {object} response.Response "失败"
+// @Router /api/file/trash [get]
 func (h *Handlers) GetTrash(ctx *gin.Context) {
 	claims, err := token.ExtractClaims(ctx)
 	if err != nil {
@@ -179,13 +201,21 @@ func (h *Handlers) GetTrash(ctx *gin.Context) {
 		_ = ctx.Error(exception.ErrLoginTimeout)
 		return
 	}
-	if recoveries := h.db.GetFileTrash(ctx, claims); len(recoveries) == 0 {
-		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", nil))
-	} else {
-		ctx.JSON(http.StatusOK, response.Success(0, "获取成功", recoveries))
-	}
+	recoveries := h.db.GetFileTrash(ctx, claims)
+	ctx.JSON(http.StatusOK, response.Success(0, "获取成功", recoveries))
 }
 
+// RecoveryFile godoc
+// @Summary 恢复文件
+// @Description 恢复文件
+// @Tags 文件管理
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token令牌"
+// @Param recoveries body request.FileRecoveryList true "文件恢复信息"
+// @Success 200 {object} response.Response "成功"
+// @Failure 200 {object} response.Response "失败"
+// @Router /api/file/recovery [post]
 func (h *Handlers) RecoveryFile(ctx *gin.Context) {
 	var recoveries request.FileRecoveryList
 	claims, err := token.ExtractClaims(ctx)
@@ -214,4 +244,45 @@ func (h *Handlers) RecoveryFile(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, response.Success(0, "恢复成功", nil))
+}
+
+// PushPartsInfo godoc
+// @Summary 上传分片信息
+// @Description 上传分片信息
+// @Tags 文件管理
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token令牌"
+// @Param partInfo body request.PartInfo true "分片信息"
+// @Success 200 {object} response.Response "成功"
+// @Failure 200 {object} response.Response "失败"
+// @Router /api/file/pushparts [post]
+func (h *Handlers) PushPartsInfo(ctx *gin.Context) {
+	claims, err := token.ExtractClaims(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(claims.UserId) == 0 {
+		_ = ctx.Error(exception.ErrTokenEmpty)
+		return
+	}
+	if str := h.db.GetValue(ctx, defines.USER_TOKEN_KEY+claims.UserId); str == "" {
+		_ = ctx.Error(exception.ErrLoginTimeout)
+		return
+	}
+	var parts request.PartInfo
+	if err := ctx.BindJSON(&parts); err != nil {
+		_ = ctx.Error(exception.ErrBadRequest)
+		return
+	}
+	if err := validates.Validate(ctx, &parts); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err := h.db.PushPartsInfo(ctx, parts); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Success(0, "分片信息上传成功", nil))
 }
