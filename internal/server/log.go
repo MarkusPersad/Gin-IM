@@ -65,16 +65,18 @@ func GinLogger() gin.HandlerFunc {
 		start := time.Now()
 		path := ctx.Request.URL.Path
 		query := ctx.Request.URL.RawQuery
-		cost := time.Since(start)
-		defer log.Logger.Info().
-			Int("Status", ctx.Writer.Status()).
-			Str("Method", ctx.Request.Method).
-			Str("Path", path).
-			Str("Query", query).
-			Str("IP", ctx.ClientIP()).
-			Str("User-Agent", ctx.Request.UserAgent()).
-			Str("Errors", ctx.Errors.ByType(gin.ErrorTypePrivate).String()).
-			Dur("Cost", cost).Send()
+		defer func() {
+			cost := time.Since(start)
+			log.Logger.Info().
+				Int("Status", ctx.Writer.Status()).
+				Str("Method", ctx.Request.Method).
+				Str("Path", path).
+				Str("Query", query).
+				Str("IP", ctx.ClientIP()).
+				Str("User-Agent", ctx.Request.UserAgent()).
+				Str("Errors", ctx.Errors.ByType(gin.ErrorTypePrivate).String()).
+				Dur("Cost", cost).Send()
+		}()
 		ctx.Next()
 	}
 }
@@ -99,7 +101,7 @@ func GinRecovery(stack bool) gin.HandlerFunc {
 						Any("Error", err).
 						Str("Request", string(httpRequest)).
 						Send()
-					ctx.Error(err.(error))
+					_ = ctx.Error(err.(error))
 					ctx.Abort()
 					return
 				}

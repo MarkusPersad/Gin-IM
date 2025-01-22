@@ -10,7 +10,7 @@ type ValkeyService interface {
 	GetValue(ctx context.Context, key string) string
 	DelValue(ctx context.Context, keys ...string) error
 	SetListAndTime(ctx context.Context, key string, list []string, timeout int64) error
-	AddToList(ctx context.Context, key string, element string) error
+	//AddToList(ctx context.Context, key string, element string) error
 	GetList(ctx context.Context, key string) []string
 }
 
