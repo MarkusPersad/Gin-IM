@@ -23,7 +23,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/valkey-io/valkey-go v1.0.54
 	golang.org/x/crypto v0.32.0
-	google.golang.org/protobuf v1.36.4
+	google.golang.org/protobuf v1.36.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 	gorm.io/plugin/optimisticlock v1.1.3
