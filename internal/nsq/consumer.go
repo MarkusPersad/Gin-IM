@@ -2,12 +2,13 @@ package nsq
 
 import (
 	"Gin-IM/pkg/protocol"
-	"github.com/nsqio/go-nsq"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/protobuf/proto"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/nsqio/go-nsq"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/protobuf/proto"
 )
 
 var consumer *nsq.Consumer
@@ -35,7 +36,7 @@ func newConsumer() *nsq.Consumer {
 		log.Logger.Error().Err(err).Msg("failed to create nsq consumer")
 		return nil
 	} else {
-		consumer.AddHandler(nsq.HandlerFunc(handleMessage))
+		consumers.AddHandler(nsq.HandlerFunc(handleMessage))
 		if err := consumer.ConnectToNSQLookupd(os.Getenv("NSQ_ADDRESS")); err != nil {
 			log.Logger.Fatal().Err(err).Msg("failed to connect to nsqlookupd")
 			return nil

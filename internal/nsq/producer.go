@@ -4,12 +4,13 @@ import (
 	"Gin-IM/pkg/defines"
 	"Gin-IM/pkg/protocol"
 	"errors"
-	"github.com/nsqio/go-nsq"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/protobuf/proto"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/nsqio/go-nsq"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/protobuf/proto"
 )
 
 var producer *nsq.Producer
@@ -17,11 +18,13 @@ var topic string
 
 func init() {
 	producer = newProducer()
-	if producer != nil && producer.Ping() == nil {
-		log.Logger.Info().Msg("nsq producer created")
-	} else {
-		log.Logger.Error().Msg("failed to create nsq producer")
+	if producer == nil {
+		log.Logger.Fatal().Msg("failed to create NSQ producer")
 	}
+	if err := producer.Ping(); err != nil {
+		log.Logger.Fatal().Err(err).Msg("NSQ producer ping failed")
+	}
+	log.Logger.Info().Msg("NSQ producer initialized successfully")
 }
 func newProducer() *nsq.Producer {
 	if producer != nil && producer.Ping() == nil {
@@ -31,17 +34,18 @@ func newProducer() *nsq.Producer {
 	if maxInFlight, err := strconv.Atoi(os.Getenv("NSQ_MAX_INFLIGHT")); err == nil {
 		config.MaxInFlight = maxInFlight
 	}
-	if producers, err := nsq.NewProducer(os.Getenv("NSQ_ADDR"), config); err != nil {
-		log.Logger.Fatal().Err(err).Msg("failed to create nsq producer")
-		return nil
-	} else {
-		if topics := os.Getenv("NSQ_TOPIC"); topics != "" {
-			topic = topics
-		} else {
-			topic = "chat"
-		}
-		return producers
+
+	nsqAddr := os.Getenv("NSQ_ADDR")
+	producer, err := nsq.NewProducer(nsqAddr, config)
+	if err != nil {
+		log.Logger.Fatal().Err(err).Msg("Failed to create producer")
 	}
+
+	topic = os.Getenv("NSQ_TOPIC")
+	if topic == "" {
+		topic = "chat"
+	}
+	return producer
 }
 
 func SendMsg(message *protocol.Message) error {
