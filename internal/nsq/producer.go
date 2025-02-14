@@ -48,7 +48,7 @@ func newProducer() *nsq.Producer {
 	return producer
 }
 
-func SendMsg(message *protocol.Message) error {
+func SendMsg(message *protocol.ChatMessage) error {
 	// 创建一个通道以接收异步发布操作的结果。
 	doneChan := make(chan *nsq.ProducerTransaction)
 

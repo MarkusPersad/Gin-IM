@@ -47,7 +47,7 @@ func newConsumer() *nsq.Consumer {
 
 // handleMessage 处理从 NSQ 主题接收到的消息
 func handleMessage(m *nsq.Message) error {
-	var message protocol.Message
+	var message protocol.ChatMessage
 	if err := proto.Unmarshal(m.Body, &message); err != nil {
 		log.Logger.Error().Err(err).Msg("failed to unmarshal message")
 		return err

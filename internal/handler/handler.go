@@ -2,8 +2,9 @@ package handler
 
 import (
 	"Gin-IM/internal/database"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {

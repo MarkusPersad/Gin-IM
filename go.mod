@@ -4,7 +4,7 @@ go 1.23.4
 
 require (
 	github.com/cilium/lumberjack/v2 v2.4.1
-	github.com/dlclark/regexp2 v1.11.4
+	github.com/dlclark/regexp2 v1.11.5
 	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-contrib/gzip v1.2.2
 	github.com/gin-contrib/timeout v1.0.2
@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
-	github.com/minio/minio-go/v7 v7.0.84
+	github.com/minio/minio-go/v7 v7.0.85
 	github.com/mojocn/base64Captcha v1.3.8
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/rs/zerolog v1.33.0
@@ -22,7 +22,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.4
 	github.com/valkey-io/valkey-go v1.0.54
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.33.0
 	google.golang.org/protobuf v1.36.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
@@ -70,9 +70,9 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.14.0 // indirect
 	golang.org/x/image v0.24.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
