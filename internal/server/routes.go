@@ -1,15 +1,16 @@
 package server
 
 import (
-	_ "Gin-IM/cmd/api/docs"
+	_ "Gin-IM/docs"
 	"Gin-IM/internal/midleware"
+	"net/http"
+	"strings"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"net/http"
-	"strings"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {

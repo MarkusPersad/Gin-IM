@@ -1,0 +1,998 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/account/getcaptcha": {
+            "get": {
+                "description": "获取验证码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "获取验证码",
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/getuserinfo": {
+            "get": {
+                "description": "获取用户信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "获取用户信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/login": {
+            "post": {
+                "description": "处理用户登录请求。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "登陆",
+                "parameters": [
+                    {
+                        "description": "登录信息",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.Login"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/logout": {
+            "get": {
+                "description": "退出登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "退出登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/register": {
+            "post": {
+                "description": "处理用户注册请求",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "注册",
+                "parameters": [
+                    {
+                        "description": "注册信息",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.Register"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/search": {
+            "post": {
+                "description": "搜索用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账户管理"
+                ],
+                "summary": "搜索用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "搜索信息",
+                        "name": "userSearch",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UserSearch"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/delete": {
+            "post": {
+                "description": "删除文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "删除文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "文件删除信息",
+                        "name": "fileDeletes",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileDeletes"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/download": {
+            "post": {
+                "description": "获取文件下载地址",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "获取文件下载地址",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "文件下载信息",
+                        "name": "fileDownload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileDownload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败受到",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/merge": {
+            "post": {
+                "description": "合并文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "合并文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "文件合并信息",
+                        "name": "merge",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileMerge"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/pushparts": {
+            "post": {
+                "description": "上传分片信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "上传分片信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "分片信息",
+                        "name": "partInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PartInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/recovery": {
+            "post": {
+                "description": "恢复文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "恢复文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "文件恢复信息",
+                        "name": "recoveries",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileRecoveryList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/trash": {
+            "get": {
+                "description": "获取回收站文件列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "获取回收站文件列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/upload": {
+            "post": {
+                "description": "上传文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件管理"
+                ],
+                "summary": "上传文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "文件上传信息",
+                        "name": "fileUpload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileUpload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/add": {
+            "post": {
+                "description": "添加好友",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "添加好友",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "friend_request",
+                        "name": "friend_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/agree": {
+            "post": {
+                "description": "同意好友请求",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "同意好友请求",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "好友信息",
+                        "name": "friend_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/black": {
+            "post": {
+                "description": "拉黑好友",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "拉黑好友",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "好友信息",
+                        "name": "friend_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/blacklist": {
+            "get": {
+                "description": "查询拉黑列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "查询拉黑列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/cancelblack": {
+            "post": {
+                "description": "取消拉黑",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "取消拉黑",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "好友信息",
+                        "name": "friend_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/delete": {
+            "post": {
+                "description": "删除好友",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "删除好友",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "好友信息",
+                        "name": "friend_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FriendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/friend/list": {
+            "get": {
+                "description": "获取好友列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "好友"
+                ],
+                "summary": "获取好友列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "request.FileDelete": {
+            "type": "object",
+            "required": [
+                "fileName",
+                "md5",
+                "sha1"
+            ],
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "sha1": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileDeletes": {
+            "type": "object",
+            "required": [
+                "deletes"
+            ],
+            "properties": {
+                "deletes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.FileDelete"
+                    }
+                }
+            }
+        },
+        "request.FileDownload": {
+            "type": "object",
+            "required": [
+                "fileName",
+                "md5",
+                "sha1"
+            ],
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "sha1": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileMerge": {
+            "type": "object",
+            "required": [
+                "fileName",
+                "md5",
+                "sha1"
+            ],
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "sha1": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileRecovery": {
+            "type": "object",
+            "required": [
+                "fileName",
+                "md5",
+                "sha1"
+            ],
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "sha1": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileRecoveryList": {
+            "type": "object",
+            "required": [
+                "recoveries"
+            ],
+            "properties": {
+                "recoveries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.FileRecovery"
+                    }
+                }
+            }
+        },
+        "request.FileUpload": {
+            "type": "object",
+            "required": [
+                "chunkNumber",
+                "chunkSize",
+                "fileName",
+                "md5",
+                "sha1"
+            ],
+            "properties": {
+                "chunkNumber": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "chunkSize": {
+                    "type": "integer"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "sha1": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FriendRequest": {
+            "type": "object",
+            "required": [
+                "friendInfo"
+            ],
+            "properties": {
+                "friendInfo": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.Login": {
+            "type": "object",
+            "required": [
+                "checkCode",
+                "checkCodeKey",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "checkCode": {
+                    "type": "string"
+                },
+                "checkCodeKey": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.PartInfo": {
+            "type": "object",
+            "required": [
+                "partNums",
+                "uploadId"
+            ],
+            "properties": {
+                "partNums": {
+                    "type": "string"
+                },
+                "uploadId": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.Register": {
+            "type": "object",
+            "required": [
+                "checkCode",
+                "checkCodeKey",
+                "email",
+                "password",
+                "userName"
+            ],
+            "properties": {
+                "checkCode": {
+                    "type": "string"
+                },
+                "checkCodeKey": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "userName": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 8
+                }
+            }
+        },
+        "request.UserSearch": {
+            "type": "object",
+            "required": [
+                "userInfo"
+            ],
+            "properties": {
+                "userInfo": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "msg": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

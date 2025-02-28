@@ -1,0 +1,657 @@
+definitions:
+  request.FileDelete:
+    properties:
+      fileName:
+        type: string
+      md5:
+        type: string
+      sha1:
+        type: string
+    required:
+    - fileName
+    - md5
+    - sha1
+    type: object
+  request.FileDeletes:
+    properties:
+      deletes:
+        items:
+          $ref: '#/definitions/request.FileDelete'
+        type: array
+    required:
+    - deletes
+    type: object
+  request.FileDownload:
+    properties:
+      fileName:
+        type: string
+      md5:
+        type: string
+      sha1:
+        type: string
+    required:
+    - fileName
+    - md5
+    - sha1
+    type: object
+  request.FileMerge:
+    properties:
+      fileName:
+        type: string
+      md5:
+        type: string
+      sha1:
+        type: string
+    required:
+    - fileName
+    - md5
+    - sha1
+    type: object
+  request.FileRecovery:
+    properties:
+      fileName:
+        type: string
+      md5:
+        type: string
+      sha1:
+        type: string
+    required:
+    - fileName
+    - md5
+    - sha1
+    type: object
+  request.FileRecoveryList:
+    properties:
+      recoveries:
+        items:
+          $ref: '#/definitions/request.FileRecovery'
+        type: array
+    required:
+    - recoveries
+    type: object
+  request.FileUpload:
+    properties:
+      chunkNumber:
+        minimum: 1
+        type: integer
+      chunkSize:
+        type: integer
+      fileName:
+        type: string
+      md5:
+        type: string
+      sha1:
+        type: string
+    required:
+    - chunkNumber
+    - chunkSize
+    - fileName
+    - md5
+    - sha1
+    type: object
+  request.FriendRequest:
+    properties:
+      friendInfo:
+        type: string
+    required:
+    - friendInfo
+    type: object
+  request.Login:
+    properties:
+      checkCode:
+        type: string
+      checkCodeKey:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - checkCode
+    - checkCodeKey
+    - email
+    - password
+    type: object
+  request.PartInfo:
+    properties:
+      partNums:
+        type: string
+      uploadId:
+        type: string
+    required:
+    - partNums
+    - uploadId
+    type: object
+  request.Register:
+    properties:
+      checkCode:
+        type: string
+      checkCodeKey:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      userName:
+        maxLength: 32
+        minLength: 8
+        type: string
+    required:
+    - checkCode
+    - checkCodeKey
+    - email
+    - password
+    - userName
+    type: object
+  request.UserSearch:
+    properties:
+      userInfo:
+        type: string
+    required:
+    - userInfo
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/account/getcaptcha:
+    get:
+      consumes:
+      - application/json
+      description: 获取验证码
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取验证码
+      tags:
+      - 账户管理
+  /api/account/getuserinfo:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户信息
+      parameters:
+      - description: Bearer token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取用户信息
+      tags:
+      - 账户管理
+  /api/account/login:
+    post:
+      consumes:
+      - application/json
+      description: 处理用户登录请求。
+      parameters:
+      - description: 登录信息
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/request.Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 登陆
+      tags:
+      - 账户管理
+  /api/account/logout:
+    get:
+      consumes:
+      - application/json
+      description: 退出登录
+      parameters:
+      - description: Bearer token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 退出登录
+      tags:
+      - 账户管理
+  /api/account/register:
+    post:
+      consumes:
+      - application/json
+      description: 处理用户注册请求
+      parameters:
+      - description: 注册信息
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/request.Register'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 注册
+      tags:
+      - 账户管理
+  /api/account/search:
+    post:
+      consumes:
+      - application/json
+      description: 搜索用户
+      parameters:
+      - description: Bearer token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 搜索信息
+        in: body
+        name: userSearch
+        required: true
+        schema:
+          $ref: '#/definitions/request.UserSearch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回结果
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 搜索用户
+      tags:
+      - 账户管理
+  /api/file/delete:
+    post:
+      consumes:
+      - application/json
+      description: 删除文件
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 文件删除信息
+        in: body
+        name: fileDeletes
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileDeletes'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 删除文件
+      tags:
+      - 文件管理
+  /api/file/download:
+    post:
+      consumes:
+      - application/json
+      description: 获取文件下载地址
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 文件下载信息
+        in: body
+        name: fileDownload
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileDownload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败受到
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取文件下载地址
+      tags:
+      - 文件管理
+  /api/file/merge:
+    post:
+      consumes:
+      - application/json
+      description: 合并文件
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 文件合并信息
+        in: body
+        name: merge
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileMerge'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 合并文件
+      tags:
+      - 文件管理
+  /api/file/pushparts:
+    post:
+      consumes:
+      - application/json
+      description: 上传分片信息
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 分片信息
+        in: body
+        name: partInfo
+        required: true
+        schema:
+          $ref: '#/definitions/request.PartInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 上传分片信息
+      tags:
+      - 文件管理
+  /api/file/recovery:
+    post:
+      consumes:
+      - application/json
+      description: 恢复文件
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 文件恢复信息
+        in: body
+        name: recoveries
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileRecoveryList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 恢复文件
+      tags:
+      - 文件管理
+  /api/file/trash:
+    get:
+      consumes:
+      - application/json
+      description: 获取回收站文件列表
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取回收站文件列表
+      tags:
+      - 文件管理
+  /api/file/upload:
+    post:
+      consumes:
+      - application/json
+      description: 上传文件
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 文件上传信息
+        in: body
+        name: fileUpload
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileUpload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 上传文件
+      tags:
+      - 文件管理
+  /api/friend/add:
+    post:
+      consumes:
+      - application/json
+      description: 添加好友
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: friend_request
+        in: body
+        name: friend_request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 添加好友
+      tags:
+      - 好友
+  /api/friend/agree:
+    post:
+      consumes:
+      - application/json
+      description: 同意好友请求
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 好友信息
+        in: body
+        name: friend_request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 同意好友请求
+      tags:
+      - 好友
+  /api/friend/black:
+    post:
+      consumes:
+      - application/json
+      description: 拉黑好友
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 好友信息
+        in: body
+        name: friend_request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 拉黑好友
+      tags:
+      - 好友
+  /api/friend/blacklist:
+    get:
+      consumes:
+      - application/json
+      description: 查询拉黑列表
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 查询拉黑列表
+      tags:
+      - 好友
+  /api/friend/cancelblack:
+    post:
+      consumes:
+      - application/json
+      description: 取消拉黑
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 好友信息
+        in: body
+        name: friend_request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 取消拉黑
+      tags:
+      - 好友
+  /api/friend/delete:
+    post:
+      consumes:
+      - application/json
+      description: 删除好友
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 好友信息
+        in: body
+        name: friend_request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FriendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 删除好友
+      tags:
+      - 好友
+  /api/friend/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取好友列表
+      parameters:
+      - description: Bearer Token令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取好友列表
+      tags:
+      - 好友
+swagger: "2.0"
